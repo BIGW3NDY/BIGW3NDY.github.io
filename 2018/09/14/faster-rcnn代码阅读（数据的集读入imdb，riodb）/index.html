@@ -79,13 +79,17 @@
 
 
 
-<meta property="og:type" content="website">
-<meta property="og:title" content="魔力弹">
-<meta property="og:url" content="http://yoursite.com/index.html">
+<meta name="description" content="数据集在faster rcnn的代码中是以通过一个类imdb组织起来的，这个类可以被成为图像数据库，包含一个数据集的基本信息，如名称，图片数，目标种类数。roidb则作为imdb的一个成员，存储了每一张具体图片上的感兴趣区域信息（regions of interests）。 从train.py文件开始分析，imdb和roidb是如何一步步生成的。在类Train的构造函数中，将数据集名字作为参数im">
+<meta property="og:type" content="article">
+<meta property="og:title" content="faster rcnn 代码阅读笔记 ——数据集的读入（imdb，roidb）">
+<meta property="og:url" content="http://yoursite.com/2018/09/14/faster-rcnn代码阅读（数据的集读入imdb，riodb）/index.html">
 <meta property="og:site_name" content="魔力弹">
+<meta property="og:description" content="数据集在faster rcnn的代码中是以通过一个类imdb组织起来的，这个类可以被成为图像数据库，包含一个数据集的基本信息，如名称，图片数，目标种类数。roidb则作为imdb的一个成员，存储了每一张具体图片上的感兴趣区域信息（regions of interests）。 从train.py文件开始分析，imdb和roidb是如何一步步生成的。在类Train的构造函数中，将数据集名字作为参数im">
 <meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2018-09-14T15:15:16.384Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="魔力弹">
+<meta name="twitter:title" content="faster rcnn 代码阅读笔记 ——数据集的读入（imdb，roidb）">
+<meta name="twitter:description" content="数据集在faster rcnn的代码中是以通过一个类imdb组织起来的，这个类可以被成为图像数据库，包含一个数据集的基本信息，如名称，图片数，目标种类数。roidb则作为imdb的一个成员，存储了每一张具体图片上的感兴趣区域信息（regions of interests）。 从train.py文件开始分析，imdb和roidb是如何一步步生成的。在类Train的构造函数中，将数据集名字作为参数im">
 
 
 
@@ -115,13 +119,13 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/"/>
+  <link rel="canonical" href="http://yoursite.com/2018/09/14/faster-rcnn代码阅读（数据的集读入imdb，riodb）/"/>
 
 
 
 
 
-  <title>魔力弹</title>
+  <title>faster rcnn 代码阅读笔记 ——数据集的读入（imdb，roidb） | 魔力弹</title>
   
 
 
@@ -140,8 +144,7 @@
     
   
 
-  <div class="container sidebar-position-left 
-  page-home">
+  <div class="container sidebar-position-left page-post-detail">
     <div class="headband"></div>
 
     <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
@@ -224,9 +227,9 @@
         <div class="content-wrap">
           <div id="content" class="content">
             
-  <section id="posts" class="posts-expand">
+
+  <div id="posts" class="posts-expand">
     
-      
 
   
 
@@ -256,9 +259,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2018/09/14/faster-rcnn代码阅读（数据的集读入imdb，riodb）/" itemprop="url">faster rcnn 代码阅读笔记 ——数据集的读入（imdb，roidb）</a></h1>
+          <h1 class="post-title" itemprop="name headline">faster rcnn 代码阅读笔记 ——数据集的读入（imdb，roidb）</h1>
         
 
         <div class="post-meta">
@@ -308,9 +309,7 @@
       
 
       
-        
-          
-            <p>数据集在faster rcnn的代码中是以通过一个类imdb组织起来的，这个类可以被成为图像数据库，包含一个数据集的基本信息，如名称，图片数，目标种类数。roidb则作为imdb的一个成员，存储了每一张具体图片上的感兴趣区域信息（regions of interests）。</p>
+        <p>数据集在faster rcnn的代码中是以通过一个类imdb组织起来的，这个类可以被成为图像数据库，包含一个数据集的基本信息，如名称，图片数，目标种类数。roidb则作为imdb的一个成员，存储了每一张具体图片上的感兴趣区域信息（regions of interests）。</p>
 <p>从train.py文件开始分析，imdb和roidb是如何一步步生成的。<br>在类Train的构造函数中，将数据集名字作为参数imdb_names传入到同一文件的combined_roidb函数中去。</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">self.imdb, self.roidb = combined_roidb(<span class="string">"voc_2007_trainval"</span>)</span><br></pre></td></tr></table></figure>
 <p>在这个combined_roidb函数中，将参数imdb_names按照分隔符“+”进行分割，以处理多个数据集的情况，当然在这里只传入了一个数据集的名字。并将分割后的imdb名称分别作为参数调用了嵌套在其自身内的get_roidb函数得到roidb。</p>
@@ -329,8 +328,6 @@
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">def gt_roidb(self):</span><br><span class="line">       <span class="string">""</span><span class="string">"</span></span><br><span class="line"><span class="string">       Return the database of ground-truth regions of interest.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">       This function loads/saves from/to a cache file to speed up future calls.</span></span><br><span class="line"><span class="string">       "</span><span class="string">""</span></span><br><span class="line">       cache_file = os.path.join(self.cache_path, self.name + <span class="string">'_gt_roidb.pkl'</span>)</span><br><span class="line">       <span class="keyword">if</span> os.path.exists(cache_file):</span><br><span class="line">           with open(cache_file, <span class="string">'rb'</span>) as fid:</span><br><span class="line">               try:</span><br><span class="line">                   roidb = pickle.load(fid)</span><br><span class="line">               except:</span><br><span class="line">                   roidb = pickle.load(fid, encoding=<span class="string">'bytes'</span>)</span><br><span class="line">           <span class="built_in">print</span>(<span class="string">'&#123;&#125; gt roidb loaded from &#123;&#125;'</span>.format(self.name, cache_file))</span><br><span class="line">           <span class="built_in">return</span> roidb</span><br><span class="line"></span><br><span class="line">       gt_roidb = [self._load_pascal_annotation(index)</span><br><span class="line">                   <span class="keyword">for</span> index <span class="keyword">in</span> self.image_index]</span><br><span class="line">       with open(cache_file, <span class="string">'wb'</span>) as fid:</span><br><span class="line">           pickle.dump(gt_roidb, fid, pickle.HIGHEST_PROTOCOL)</span><br><span class="line">       <span class="built_in">print</span>(<span class="string">'wrote gt roidb to &#123;&#125;'</span>.format(cache_file))</span><br><span class="line"></span><br><span class="line">       <span class="built_in">return</span> gt_roidb</span><br></pre></td></tr></table></figure>
 <p>此时，roidb和imdb都已经加载得到，回到combined_roidb函数中，根据需要处理的数据集个数对roidb进行了一些相关处理，因为这里我们只用到一个数据集，所以直接返回了roidb和imdb。</p>
 
-          
-        
       
     </div>
     
@@ -347,12 +344,12 @@
       
 
       
+      
+      
 
       
 
       
-      
-        <div class="post-eof"></div>
       
     </footer>
   </div>
@@ -362,10 +359,11 @@
   </article>
 
 
-    
-  </section>
 
-  
+    <div class="post-spread">
+      
+    </div>
+  </div>
 
 
           </div>
@@ -373,6 +371,10 @@
 
 
           
+
+  
+
+
 
         </div>
         
@@ -393,8 +395,17 @@
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
 
-      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+      <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
@@ -436,6 +447,22 @@
         </div>
       </section>
 
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#生成imdb"><span class="nav-number">1.</span> <span class="nav-text">生成imdb</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#roidb的生成"><span class="nav-number">2.</span> <span class="nav-text">roidb的生成</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
       
 
       
@@ -576,6 +603,10 @@
 
 
   
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
 
   
 
