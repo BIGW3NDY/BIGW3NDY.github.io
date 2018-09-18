@@ -68,7 +68,7 @@
 
 
 
-  <meta name="keywords" content="Hexo, NexT" />
+  <meta name="keywords" content="算法,数论," />
 
 
 
@@ -79,13 +79,18 @@
 
 
 
-<meta property="og:type" content="website">
-<meta property="og:title" content="魔力弹">
-<meta property="og:url" content="http://yoursite.com/index.html">
+<meta name="description" content="计算（A^B）%mod，如果B的数据给的特别大，那么循环相乘时间复杂度O（n）就会崩。为了降低时间复杂度，使用快速幂进行求解。 快速幂给出计算式（A^B）% mod，首先可以把B转换成二进制形式。比如例子2^45 = 2^101101(2) = 2^100000(2)  2^1000(2)  2^100(2) * 2^1(2)，我们遍历B的二进制的每一位，判断其是否为1，并同时更新a表示该位上的1">
+<meta name="keywords" content="算法,数论">
+<meta property="og:type" content="article">
+<meta property="og:title" content="快速幂与矩阵快速幂">
+<meta property="og:url" content="http://yoursite.com/2018/09/18/快速幂/index.html">
 <meta property="og:site_name" content="魔力弹">
+<meta property="og:description" content="计算（A^B）%mod，如果B的数据给的特别大，那么循环相乘时间复杂度O（n）就会崩。为了降低时间复杂度，使用快速幂进行求解。 快速幂给出计算式（A^B）% mod，首先可以把B转换成二进制形式。比如例子2^45 = 2^101101(2) = 2^100000(2)  2^1000(2)  2^100(2) * 2^1(2)，我们遍历B的二进制的每一位，判断其是否为1，并同时更新a表示该位上的1">
 <meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2018-09-18T15:06:31.955Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="魔力弹">
+<meta name="twitter:title" content="快速幂与矩阵快速幂">
+<meta name="twitter:description" content="计算（A^B）%mod，如果B的数据给的特别大，那么循环相乘时间复杂度O（n）就会崩。为了降低时间复杂度，使用快速幂进行求解。 快速幂给出计算式（A^B）% mod，首先可以把B转换成二进制形式。比如例子2^45 = 2^101101(2) = 2^100000(2)  2^1000(2)  2^100(2) * 2^1(2)，我们遍历B的二进制的每一位，判断其是否为1，并同时更新a表示该位上的1">
 
 
 
@@ -115,13 +120,13 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/"/>
+  <link rel="canonical" href="http://yoursite.com/2018/09/18/快速幂/"/>
 
 
 
 
 
-  <title>魔力弹</title>
+  <title>快速幂与矩阵快速幂 | 魔力弹</title>
   
 
 
@@ -140,8 +145,7 @@
     
   
 
-  <div class="container sidebar-position-left 
-  page-home">
+  <div class="container sidebar-position-left page-post-detail">
     <div class="headband"></div>
 
     <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
@@ -224,9 +228,9 @@
         <div class="content-wrap">
           <div id="content" class="content">
             
-  <section id="posts" class="posts-expand">
+
+  <div id="posts" class="posts-expand">
     
-      
 
   
 
@@ -256,9 +260,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2018/09/18/快速幂/" itemprop="url">快速幂与矩阵快速幂</a></h1>
+          <h1 class="post-title" itemprop="name headline">快速幂与矩阵快速幂</h1>
         
 
         <div class="post-meta">
@@ -308,9 +310,7 @@
       
 
       
-        
-          
-            <p>计算（A^B）%mod，如果B的数据给的特别大，那么循环相乘时间复杂度O（n）就会崩。为了降低时间复杂度，使用快速幂进行求解。</p>
+        <p>计算（A^B）%mod，如果B的数据给的特别大，那么循环相乘时间复杂度O（n）就会崩。为了降低时间复杂度，使用快速幂进行求解。</p>
 <h2 id="快速幂"><a href="#快速幂" class="headerlink" title="快速幂"></a>快速幂</h2><p>给出计算式（A^B）% mod，首先可以把B转换成二进制形式。<br>比如例子2^45 = 2^101101(2) = 2^100000(2) <em> 2^1000(2) </em> 2^100(2) * 2^1(2)，我们遍历B的二进制的每一位，判断其是否为1，并同时更新a表示该位上的1所代表的数值。如为1则将答案乘以a。</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">ll quick_pow(ll a, ll b, ll mod)&#123;</span><br><span class="line">    ll ans = 1;</span><br><span class="line">    <span class="keyword">while</span>(b)&#123;</span><br><span class="line">        <span class="keyword">if</span>(b&amp;1) ans=(ans*a)%mod;</span><br><span class="line">        a=(a*a)%mod;</span><br><span class="line">        b &gt;&gt;= 1;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">return</span> ans;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <h2 id="矩阵快速幂"><a href="#矩阵快速幂" class="headerlink" title="矩阵快速幂"></a>矩阵快速幂</h2><p>将上述的方法稍加推广，可以发现，快速幂的方法还可以应用在很多运算上。<br>二元运算⊙满足a^(n+m) = a^n⊙a^m，则可以使用快速幂。</p>
@@ -326,8 +326,6 @@
 <p>然后是我的代码</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#include &lt;iostream&gt;</span></span><br><span class="line"><span class="comment">#include &lt;vector&gt;</span></span><br><span class="line"><span class="comment">#include &lt;string&gt;</span></span><br><span class="line"><span class="comment">#include &lt;cstdio&gt;</span></span><br><span class="line"><span class="comment">#include &lt;cstring&gt;</span></span><br><span class="line"><span class="comment">#include &lt;ctime&gt;</span></span><br><span class="line"><span class="comment">#define ll long long</span></span><br><span class="line"><span class="comment">#define MOD 1000000007</span></span><br><span class="line">using namespace std;</span><br><span class="line"></span><br><span class="line">struct mat&#123;</span><br><span class="line">    ll m[9][9];</span><br><span class="line">&#125;unit;</span><br><span class="line"></span><br><span class="line">void <span class="function"><span class="title">init</span></span>()&#123;</span><br><span class="line">    memset(unit.m,0,sizeof(unit.m));</span><br><span class="line">    unit.m[5][0] = unit.m[7][0] = 1;</span><br><span class="line">    unit.m[3][1] = unit.m[5][1] = unit.m[7][1] = 1;</span><br><span class="line">    unit.m[4][2] = unit.m[6][2] = 1;</span><br><span class="line">    unit.m[0][3] = unit.m[6][3] = 1;</span><br><span class="line">    unit.m[1][4] = unit.m[8][4] = 1;</span><br><span class="line">    unit.m[1][5] = unit.m[2][5] = unit.m[8][5] = 1;</span><br><span class="line">    unit.m[0][6] = unit.m[4][6] = 1;</span><br><span class="line">    unit.m[3][7] = unit.m[5][7] = 1;</span><br><span class="line">    unit.m[1][8] = unit.m[2][8] = 1;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">mat mat_mul(mat a, mat b)&#123;</span><br><span class="line">    mat matrix;</span><br><span class="line">    memset(matrix.m,0,sizeof(matrix.m));</span><br><span class="line">    <span class="keyword">for</span>(int i=0;i&lt;9;i++)</span><br><span class="line">    <span class="keyword">for</span>(int j=0;j&lt;9;j++)</span><br><span class="line">    <span class="keyword">for</span>(int k=0;k&lt;9;k++)&#123;</span><br><span class="line">        matrix.m[i][j]+=a.m[i][k]*b.m[k][j];</span><br><span class="line">        matrix.m[i][j]%=MOD;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">return</span> matrix;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">void print_mat(mat a)&#123;</span><br><span class="line">    <span class="keyword">for</span>(int i=0;i&lt;9;i++)&#123;</span><br><span class="line">        <span class="keyword">for</span>(int j=0;j&lt;9;j++)&#123;</span><br><span class="line">            <span class="built_in">printf</span>(<span class="string">"%lld "</span>,a.m[i][j]);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"\n"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"\n"</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">mat quick_pow(ll num)&#123;</span><br><span class="line">    mat ans=unit,tmp=unit;</span><br><span class="line">//    print_mat(ans);</span><br><span class="line">//    print_mat(tmp);</span><br><span class="line">    <span class="keyword">while</span>(num)&#123;</span><br><span class="line">        <span class="keyword">if</span>(num&amp;1)&#123;</span><br><span class="line">            ans = mat_mul(ans,tmp);</span><br><span class="line">//            print_mat(ans);</span><br><span class="line">        &#125;</span><br><span class="line">        tmp = mat_mul(tmp,tmp);</span><br><span class="line">        num &gt;&gt;= 1;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">return</span> ans;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">int <span class="function"><span class="title">main</span></span>()&#123;</span><br><span class="line">    int n;</span><br><span class="line">    scanf(<span class="string">"%d"</span>,&amp;n);</span><br><span class="line">    ll num;</span><br><span class="line">    init();</span><br><span class="line">    <span class="keyword">while</span>(n--)&#123;</span><br><span class="line">        scanf(<span class="string">"%lld"</span>,&amp;num);</span><br><span class="line">        <span class="keyword">if</span>(num==1)&#123;</span><br><span class="line">            <span class="built_in">printf</span>(<span class="string">"3\n"</span>);</span><br><span class="line">            <span class="built_in">continue</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span>(num==2)&#123;</span><br><span class="line">            <span class="built_in">printf</span>(<span class="string">"9\n"</span>);</span><br><span class="line">            <span class="built_in">continue</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        mat res = quick_pow(num-3);</span><br><span class="line">        ll ans = 0;</span><br><span class="line">        <span class="keyword">for</span>(int i=0;i&lt;9;i++)</span><br><span class="line">            <span class="keyword">for</span>(int j=0;j&lt;9;j++)&#123;</span><br><span class="line">                ans += res.m[i][j];</span><br><span class="line">                ans %= MOD;</span><br><span class="line">            &#125;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"%lld\n"</span>,ans);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">return</span> 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-          
-        
       
     </div>
     
@@ -342,151 +340,38 @@
 
     <footer class="post-footer">
       
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/09/14/faster-rcnn代码阅读（数据的集读入imdb，riodb）/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="DingHH">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="魔力弹">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2018/09/14/faster-rcnn代码阅读（数据的集读入imdb，riodb）/" itemprop="url">faster rcnn 代码阅读笔记 ——数据集的读入（imdb，roidb）</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-09-14T22:23:31+08:00">
-                2018-09-14
-              </time>
-            
-
-            
-
-            
-          </span>
-
+        <div class="post-tags">
           
-
+            <a href="/tags/算法/" rel="tag"># 算法</a>
           
-            
+            <a href="/tags/数论/" rel="tag"># 数论</a>
           
-
-          
-          
-
-          
-
-          
-
-          
-
         </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>数据集在faster rcnn的代码中是以通过一个类imdb组织起来的，这个类可以被成为图像数据库，包含一个数据集的基本信息，如名称，图片数，目标种类数。roidb则作为imdb的一个成员，存储了每一张具体图片上的感兴趣区域信息（regions of interests）。</p>
-<p>从train.py文件开始分析，imdb和roidb是如何一步步生成的。<br>在类Train的构造函数中，将数据集名字作为参数imdb_names传入到同一文件的combined_roidb函数中去。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">self.imdb, self.roidb = combined_roidb(<span class="string">"voc_2007_trainval"</span>)</span><br></pre></td></tr></table></figure>
-<p>在这个combined_roidb函数中，将参数imdb_names按照分隔符“+”进行分割，以处理多个数据集的情况，当然在这里只传入了一个数据集的名字。并将分割后的imdb名称分别作为参数调用了嵌套在其自身内的get_roidb函数得到roidb。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">roidbs = [get_roidb(s) <span class="keyword">for</span> s <span class="keyword">in</span> imdb_names.split(<span class="string">'+'</span>)]</span><br></pre></td></tr></table></figure>
-<h3 id="生成imdb"><a href="#生成imdb" class="headerlink" title="生成imdb"></a>生成imdb</h3><p>具体在get_roidb函数内，首先调用get_imdb，得到imdb，在get_imdb函数中，获取得到pascal_voc(split,year)。在这里，也就相当于调用了pascal_voc(trainval，2007)，得到了一个pascal_voc格式的数据集。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> year <span class="keyword">in</span> [<span class="string">'2007'</span>, <span class="string">'2012'</span>]:</span><br><span class="line">  <span class="keyword">for</span> split <span class="keyword">in</span> [<span class="string">'train'</span>, <span class="string">'val'</span>, <span class="string">'trainval'</span>, <span class="string">'test'</span>]:</span><br><span class="line">    name = <span class="string">'voc_&#123;&#125;_&#123;&#125;'</span>.format(year, split)</span><br><span class="line">    __sets[name] = (lambda split=split, year=year: pascal_voc(split, year))</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> year <span class="keyword">in</span> [<span class="string">'2014'</span>]:</span><br><span class="line">  <span class="keyword">for</span> split <span class="keyword">in</span> [<span class="string">'train'</span>, <span class="string">'val'</span>, <span class="string">'minival'</span>, <span class="string">'valminusminival'</span>, <span class="string">'trainval'</span>]:</span><br><span class="line">    name = <span class="string">'coco_&#123;&#125;_&#123;&#125;'</span>.format(year, split)</span><br><span class="line">    __sets[name] = (lambda split=split, year=year: coco(split, year))</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> year <span class="keyword">in</span> [<span class="string">'2015'</span>]:</span><br><span class="line">  <span class="keyword">for</span> split <span class="keyword">in</span> [<span class="string">'test'</span>, <span class="string">'test-dev'</span>]:</span><br><span class="line">    name = <span class="string">'coco_&#123;&#125;_&#123;&#125;'</span>.format(year, split)</span><br><span class="line">    __sets[name] = (lambda split=split, year=year: coco(split, year))</span><br><span class="line"></span><br><span class="line">def get_imdb(name):</span><br><span class="line">  <span class="keyword">if</span> name not <span class="keyword">in</span> __sets:</span><br><span class="line">    raise KeyError(<span class="string">'Unknown dataset: &#123;&#125;'</span>.format(name))</span><br><span class="line">  <span class="built_in">return</span> __sets[name]()</span><br></pre></td></tr></table></figure>
-<p>pascal_voc继承自imdb，增加了更多的关于数据集的属性信息，在pascal_voc的初始化函数中，定义了诸如数据集的名字，存储路径，带识别图像类别以及其对应索引号，图像后缀名之类的属性，加载了数据集中所含图片的索引，以及该数据集的roidb。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">def __init__(self, image_set, year, devkit_path=None):</span><br><span class="line">        imdb.__init__(self, <span class="string">'voc_'</span> + year + <span class="string">'_'</span> + image_set)</span><br><span class="line">        self._year = year</span><br><span class="line">        self._image_set = image_set</span><br><span class="line">        self._devkit_path = self._get_default_path() <span class="keyword">if</span> devkit_path is None \</span><br><span class="line">            <span class="keyword">else</span> devkit_path</span><br><span class="line">        self._data_path = os.path.join(self._devkit_path, <span class="string">'VOC'</span> + self._year) <span class="comment">#设置数据集路径</span></span><br><span class="line">        self._classes = (<span class="string">'__background__'</span>,  <span class="comment"># always index 0</span></span><br><span class="line">                        <span class="string">'336'</span>,u<span class="string">'cilang'</span>,u<span class="string">'dahongshi'</span>,u<span class="string">'guanguanshi'</span>,u<span class="string">'heishi'</span>,u<span class="string">'huaitaishi'</span>,u<span class="string">'huoguan'</span>,u<span class="string">'jinzaoshi'</span>,u<span class="string">'mopanshi'</span>,u<span class="string">'zhoushanchangshi'</span>)<span class="comment">#'jueyuanzi')#'purewater', 'ckiwi', 'cherrycola', 'walnut','clemon','cola500','coconut','sprit','clemon','zerocola')  #设置类别</span></span><br><span class="line">        self._class_to_ind = dict(list(zip(self.classes, list(range(self.num_classes))))) <span class="comment">#设置类别索引</span></span><br><span class="line">        self._image_ext = <span class="string">'.jpg'</span></span><br><span class="line">        self._image_index = self._load_image_set_index() <span class="comment">#加载图片索引</span></span><br><span class="line">        <span class="comment"># Default to roidb handler</span></span><br><span class="line">        self._roidb_handler = self.gt_roidb</span><br><span class="line">        self._salt = str(uuid.uuid4())</span><br><span class="line">        self._comp_id = <span class="string">'comp4'</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># PASCAL specific config options</span></span><br><span class="line">        self.config = &#123;<span class="string">'cleanup'</span>: True,</span><br><span class="line">                       <span class="string">'use_salt'</span>: True,</span><br><span class="line">                       <span class="string">'use_diff'</span>: False,</span><br><span class="line">                       <span class="string">'matlab_eval'</span>: False,</span><br><span class="line">                       <span class="string">'rpn_file'</span>: None&#125;</span><br><span class="line"></span><br><span class="line">        assert os.path.exists(self._devkit_path), \</span><br><span class="line">            <span class="string">'VOCdevkit path does not exist: &#123;&#125;'</span>.format(self._devkit_path)</span><br><span class="line">        assert os.path.exists(self._data_path), \</span><br><span class="line">            <span class="string">'Path does not exist: &#123;&#125;'</span>.format(self._data_path)</span><br></pre></td></tr></table></figure>
-<p>值得注意的地方有roidb_handler，这个在生成roidb时起到作用。还有就是加载图片索引部分。在这里，使用了一个load_image_set_index函数，打开数据集中Main文件内的txt文件，这个文件中存放着图片的名称，函数一行一行将图片的名称作为索引读到image_index里面。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">def _load_image_set_index(self):</span><br><span class="line">        <span class="string">""</span><span class="string">"</span></span><br><span class="line"><span class="string">        Load the indexes listed in this dataset's image set file.</span></span><br><span class="line"><span class="string">        "</span><span class="string">""</span></span><br><span class="line"></span><br><span class="line">        image_set_file = os.path.join(self._data_path, <span class="string">'ImageSets'</span>, <span class="string">'Main'</span>,</span><br><span class="line">                                      self._image_set + <span class="string">'.txt'</span>)</span><br><span class="line"></span><br><span class="line">        assert os.path.exists(image_set_file), \</span><br><span class="line">            <span class="string">'Path does not exist: &#123;&#125;'</span>.format(image_set_file)</span><br><span class="line">        with open(image_set_file) as f:</span><br><span class="line">            image_index = [x.strip() <span class="keyword">for</span> x <span class="keyword">in</span> f.readlines()]</span><br><span class="line">        <span class="built_in">return</span> image_index</span><br></pre></td></tr></table></figure>
-<p>到这里为止，imdb的内容就已经加载好了。</p>
-<h3 id="roidb的生成"><a href="#roidb的生成" class="headerlink" title="roidb的生成"></a>roidb的生成</h3><p>接下来combined_roidb函数接着设置了一个proposal_method，这里设为了“gt”（这是为了之后生成roidb做的一个设置）。以及调用了 get_training_roidb。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">def get_training_roidb(imdb):</span><br><span class="line">    <span class="string">""</span><span class="string">"Returns a roidb (Region of Interest database) for use in training."</span><span class="string">""</span></span><br><span class="line">    <span class="keyword">if</span> True:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">'Appending horizontally-flipped training examples...'</span>)</span><br><span class="line">        imdb.append_flipped_images() <span class="comment">#数据扩充，对图像进行翻转</span></span><br><span class="line">        <span class="built_in">print</span>(<span class="string">'done'</span>)</span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">'Preparing training data...'</span>)</span><br><span class="line">    rdl_roidb.prepare_roidb(imdb) <span class="comment">#准备roidb，将图片信息都读入到roidb数组内</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">'done'</span>)</span><br><span class="line"></span><br><span class="line">    <span class="built_in">return</span> imdb.roidb</span><br></pre></td></tr></table></figure>
-<p>要说明的是，roidb为单张图片的信息，包括对象位置坐标信息等等，在程序里，具体用roidb[]字典存放数据集里所有图片的信息。即一张图有一个roidb，每个roidb是一个字典。</p>
-<p>在append_flipped_images中，调用了pascal_voc中的gt_roidb（参照前面proposal_method设定为gt），转而调用了同一个文件中的_load_pascal_annotation，该函数根据图片的索引，到Annotations这个文件夹下去找相应的xml标注数据，然后加载所有的bounding box对象，xml的解析到此结束。prepare_roidb则是对roidb中的几个类成员的赋值。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">def gt_roidb(self):</span><br><span class="line">       <span class="string">""</span><span class="string">"</span></span><br><span class="line"><span class="string">       Return the database of ground-truth regions of interest.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">       This function loads/saves from/to a cache file to speed up future calls.</span></span><br><span class="line"><span class="string">       "</span><span class="string">""</span></span><br><span class="line">       cache_file = os.path.join(self.cache_path, self.name + <span class="string">'_gt_roidb.pkl'</span>)</span><br><span class="line">       <span class="keyword">if</span> os.path.exists(cache_file):</span><br><span class="line">           with open(cache_file, <span class="string">'rb'</span>) as fid:</span><br><span class="line">               try:</span><br><span class="line">                   roidb = pickle.load(fid)</span><br><span class="line">               except:</span><br><span class="line">                   roidb = pickle.load(fid, encoding=<span class="string">'bytes'</span>)</span><br><span class="line">           <span class="built_in">print</span>(<span class="string">'&#123;&#125; gt roidb loaded from &#123;&#125;'</span>.format(self.name, cache_file))</span><br><span class="line">           <span class="built_in">return</span> roidb</span><br><span class="line"></span><br><span class="line">       gt_roidb = [self._load_pascal_annotation(index)</span><br><span class="line">                   <span class="keyword">for</span> index <span class="keyword">in</span> self.image_index]</span><br><span class="line">       with open(cache_file, <span class="string">'wb'</span>) as fid:</span><br><span class="line">           pickle.dump(gt_roidb, fid, pickle.HIGHEST_PROTOCOL)</span><br><span class="line">       <span class="built_in">print</span>(<span class="string">'wrote gt roidb to &#123;&#125;'</span>.format(cache_file))</span><br><span class="line"></span><br><span class="line">       <span class="built_in">return</span> gt_roidb</span><br></pre></td></tr></table></figure>
-<p>此时，roidb和imdb都已经加载得到，回到combined_roidb函数中，根据需要处理的数据集个数对roidb进行了一些相关处理，因为这里我们只用到一个数据集，所以直接返回了roidb和imdb。</p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
       
 
       
       
-        <div class="post-eof"></div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/09/14/faster-rcnn代码阅读（数据的集读入imdb，riodb）/" rel="next" title="faster rcnn 代码阅读笔记 ——数据集的读入（imdb，roidb）">
+                <i class="fa fa-chevron-left"></i> faster rcnn 代码阅读笔记 ——数据集的读入（imdb，roidb）
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
       
     </footer>
   </div>
@@ -496,10 +381,11 @@
   </article>
 
 
-    
-  </section>
 
-  
+    <div class="post-spread">
+      
+    </div>
+  </div>
 
 
           </div>
@@ -507,6 +393,10 @@
 
 
           
+
+  
+
+
 
         </div>
         
@@ -527,8 +417,17 @@
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
 
-      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+      <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
@@ -579,6 +478,22 @@
         </div>
       </section>
 
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#快速幂"><span class="nav-number">1.</span> <span class="nav-text">快速幂</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#矩阵快速幂"><span class="nav-number">2.</span> <span class="nav-text">矩阵快速幂</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#题目"><span class="nav-number">3.</span> <span class="nav-text">题目</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Give-Candies（根据小费马定理降幂后快速幂）"><span class="nav-number">3.1.</span> <span class="nav-text">Give Candies（根据小费马定理降幂后快速幂）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Poor-God-Water-递推公式推导矩阵"><span class="nav-number">3.2.</span> <span class="nav-text">Poor God Water (递推公式推导矩阵)</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
       
 
       
@@ -725,6 +640,10 @@
 
 
   
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
 
   
 
