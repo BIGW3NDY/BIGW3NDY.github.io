@@ -68,7 +68,7 @@
 
 
 
-  <meta name="keywords" content="算法,数论," />
+  <meta name="keywords" content="cuda并行计算," />
 
 
 
@@ -79,18 +79,18 @@
 
 
 
-<meta name="description" content="计算（A^B）%mod，如果B的数据给的特别大，那么循环相乘时间复杂度O（n）就会崩。为了降低时间复杂度，使用快速幂进行求解。 快速幂给出计算式（A^B）% mod，首先可以把B转换成二进制形式。比如例子2^45 = 2^101101(2) = 2^100000(2)  2^1000(2)  2^100(2) * 2^1(2)，我们遍历B的二进制的每一位，判断其是否为1，并同时更新a表示该位上的1">
-<meta name="keywords" content="算法,数论">
+<meta name="description" content="并行归约对一个输入数组执行某种计算，产生一个更小的结果数组。 适用场景：取最小、取最大、求和、平方和、逻辑与/或、向量点积。 例子：计算矢量和123456789101112131415161718192021222324252627282930313233343536373839404142434445464748#include&amp;lt;stdio.h&amp;gt;#include&amp;lt;cuda_ru">
+<meta name="keywords" content="cuda并行计算">
 <meta property="og:type" content="article">
-<meta property="og:title" content="快速幂与矩阵快速幂">
-<meta property="og:url" content="http://yoursite.com/2018/09/18/快速幂/index.html">
+<meta property="og:title" content="cuda分布式计算之并行规约">
+<meta property="og:url" content="http://yoursite.com/2018/11/16/cuda分布计算之并行规约/index.html">
 <meta property="og:site_name" content="魔力弹">
-<meta property="og:description" content="计算（A^B）%mod，如果B的数据给的特别大，那么循环相乘时间复杂度O（n）就会崩。为了降低时间复杂度，使用快速幂进行求解。 快速幂给出计算式（A^B）% mod，首先可以把B转换成二进制形式。比如例子2^45 = 2^101101(2) = 2^100000(2)  2^1000(2)  2^100(2) * 2^1(2)，我们遍历B的二进制的每一位，判断其是否为1，并同时更新a表示该位上的1">
+<meta property="og:description" content="并行归约对一个输入数组执行某种计算，产生一个更小的结果数组。 适用场景：取最小、取最大、求和、平方和、逻辑与/或、向量点积。 例子：计算矢量和123456789101112131415161718192021222324252627282930313233343536373839404142434445464748#include&amp;lt;stdio.h&amp;gt;#include&amp;lt;cuda_ru">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-09-18T15:06:31.955Z">
+<meta property="og:updated_time" content="2018-11-17T05:24:34.327Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="快速幂与矩阵快速幂">
-<meta name="twitter:description" content="计算（A^B）%mod，如果B的数据给的特别大，那么循环相乘时间复杂度O（n）就会崩。为了降低时间复杂度，使用快速幂进行求解。 快速幂给出计算式（A^B）% mod，首先可以把B转换成二进制形式。比如例子2^45 = 2^101101(2) = 2^100000(2)  2^1000(2)  2^100(2) * 2^1(2)，我们遍历B的二进制的每一位，判断其是否为1，并同时更新a表示该位上的1">
+<meta name="twitter:title" content="cuda分布式计算之并行规约">
+<meta name="twitter:description" content="并行归约对一个输入数组执行某种计算，产生一个更小的结果数组。 适用场景：取最小、取最大、求和、平方和、逻辑与/或、向量点积。 例子：计算矢量和123456789101112131415161718192021222324252627282930313233343536373839404142434445464748#include&amp;lt;stdio.h&amp;gt;#include&amp;lt;cuda_ru">
 
 
 
@@ -120,13 +120,13 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/2018/09/18/快速幂/"/>
+  <link rel="canonical" href="http://yoursite.com/2018/11/16/cuda分布计算之并行规约/"/>
 
 
 
 
 
-  <title>快速幂与矩阵快速幂 | 魔力弹</title>
+  <title>cuda分布式计算之并行规约 | 魔力弹</title>
   
 
 
@@ -243,7 +243,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/09/18/快速幂/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/11/16/cuda分布计算之并行规约/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="DingHH">
@@ -260,7 +260,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">快速幂与矩阵快速幂</h1>
+          <h1 class="post-title" itemprop="name headline">cuda分布式计算之并行规约</h1>
         
 
         <div class="post-meta">
@@ -272,8 +272,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-09-18T21:09:13+08:00">
-                2018-09-18
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-11-16T23:09:22+08:00">
+                2018-11-16
               </time>
             
 
@@ -310,9 +310,10 @@
       
 
       
-        <p>计算（A^B）%mod，如果B的数据给的特别大，那么循环相乘时间复杂度O（n）就会崩。为了降低时间复杂度，使用快速幂进行求解。</p>
-<h2 id="快速幂"><a href="#快速幂" class="headerlink" title="快速幂"></a>快速幂</h2><p>给出计算式（A^B）% mod，首先可以把B转换成二进制形式。<br>比如例子2^45 = 2^101101(2) = 2^100000(2) <em> 2^1000(2) </em> 2^100(2) * 2^1(2)，我们遍历B的二进制的每一位，判断其是否为1，并同时更新a表示该位上的1所代表的数值。如为1则将答案乘以a。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">ll quick_pow(ll a, ll b, ll mod)&#123;</span><br><span class="line">    ll ans = 1;</span><br><span class="line">    <span class="keyword">while</span>(b)&#123;</span><br><span class="line">        <span class="keyword">if</span>(b&amp;1) ans=(ans*a)%mod;</span><br><span class="line">        a=(a*a)%mod;</span><br><span class="line">        b &gt;&gt;= 1;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">return</span> ans;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+        <h2 id="并行归约"><a href="#并行归约" class="headerlink" title="并行归约"></a>并行归约</h2><p>对一个输入数组执行某种计算，产生一个更小的结果数组。</p>
+<p>适用场景：取最小、取最大、求和、平方和、逻辑与/或、向量点积。</p>
+<h3 id="例子：计算矢量和"><a href="#例子：计算矢量和" class="headerlink" title="例子：计算矢量和"></a>例子：计算矢量和</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#include&lt;stdio.h&gt;</span></span><br><span class="line"><span class="comment">#include&lt;cuda_runtime.h&gt;</span></span><br><span class="line"></span><br><span class="line">const int size = 1024;</span><br><span class="line"></span><br><span class="line">__global__ void parallel_reduction_sum(int* in_vec, int* out_vec, int size)&#123;</span><br><span class="line">	int tid = threadIdx.x;</span><br><span class="line">	int *local_vec = in_vec + blockDim.x * blockIdx.x;</span><br><span class="line">	<span class="keyword">if</span>(tid + blockDim.x*blockIdx.x&gt;=size)</span><br><span class="line">		<span class="built_in">return</span>;	</span><br><span class="line">	int step = 2;</span><br><span class="line">	<span class="keyword">while</span>(step &lt;= blockDim.x)&#123;</span><br><span class="line">		<span class="keyword">if</span>(tid % step == 0)</span><br><span class="line">			local_vec[tid]+=local_vec[tid+step/2];</span><br><span class="line">		__syncthreads();</span><br><span class="line">		step*=2;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span>(tid == 0 ) </span><br><span class="line">		out_vec[blockIdx.x] = local_vec[0];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">int <span class="function"><span class="title">main</span></span>()&#123;</span><br><span class="line">	int *in_data,*out_data;</span><br><span class="line">	in_data = new int[size];</span><br><span class="line">	out_data = new int[size];</span><br><span class="line">	</span><br><span class="line">	int sum = 0;</span><br><span class="line">	<span class="keyword">for</span>(int i=0;i&lt;size;i++)&#123;</span><br><span class="line">		in_data[i] = i;</span><br><span class="line">		sum += i;	</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"%d\n"</span>,sum);</span><br><span class="line"></span><br><span class="line">	int *in_vec,*out_vec;</span><br><span class="line">	cudaMalloc((void**)&amp;in_vec,size*sizeof(int));</span><br><span class="line">	cudaMalloc((void**)&amp;out_vec,size*sizeof(int));</span><br><span class="line"></span><br><span class="line">	cudaMemcpy(in_vec,in_data,size*sizeof(int),cudaMemcpyHostToDevice);</span><br><span class="line">	parallel_reduction_sum&lt;&lt;&lt;16,64&gt;&gt;&gt;(in_vec,out_vec,size);</span><br><span class="line">	cudaMemcpy(out_data,out_vec,size*sizeof(int),cudaMemcpyDeviceToHost);</span><br><span class="line"></span><br><span class="line">	sum = 0;</span><br><span class="line">	<span class="keyword">for</span>(int i=0;i&lt;16;i++)</span><br><span class="line">		sum+=out_data[i];</span><br><span class="line"></span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"%d\n"</span>,sum);</span><br><span class="line">	<span class="built_in">return</span> 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="例子：寻找矩阵最大值并且记录位置"><a href="#例子：寻找矩阵最大值并且记录位置" class="headerlink" title="例子：寻找矩阵最大值并且记录位置"></a>例子：寻找矩阵最大值并且记录位置</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#include&lt;stdio.h&gt;</span></span><br><span class="line"><span class="comment">#include&lt;cuda_runtime.h&gt;</span></span><br><span class="line"></span><br><span class="line">const int block = 256;</span><br><span class="line">const int thread = 256;</span><br><span class="line"></span><br><span class="line">__global__ void max_spike_local(int* dev_matrix,int* dev_max_local,int size, int *location_x,int *location_y)&#123;</span><br><span class="line">	int tid = threadIdx.x;</span><br><span class="line">	__shared__ int local_matrix[thread];</span><br><span class="line">	__shared__ int location[thread];</span><br><span class="line">	local_matrix[tid] = dev_matrix[tid+blockDim.x*blockIdx.x];</span><br><span class="line">	location[tid] = tid + blockDim.x*blockIdx.x;	</span><br><span class="line">	__syncthreads();</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span>(int i=size/2;i&gt;0;i/=2)&#123;</span><br><span class="line">		<span class="keyword">if</span>(tid&lt;i)&#123;	</span><br><span class="line">			<span class="keyword">if</span>(local_matrix[tid] &lt; local_matrix[tid+i])&#123;</span><br><span class="line">				local_matrix[tid] = local_matrix[tid+i];</span><br><span class="line">				location[tid] = location[tid+i];			</span><br><span class="line">			&#125;					</span><br><span class="line">		&#125;	</span><br><span class="line">		__syncthreads();</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span>(tid==0)&#123;</span><br><span class="line">		dev_max_local[blockIdx.x] = local_matrix[0];</span><br><span class="line">		location_x[blockIdx.x] = blockIdx.x;</span><br><span class="line">		location_y[blockIdx.x] = location[tid]-blockIdx.x*thread;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">__global__ void max_spike_global(int* dev_max_local, int size,int *location_x, int* location_y)&#123;</span><br><span class="line">	int tid = threadIdx.x;</span><br><span class="line">	__shared__ int max_local[block];</span><br><span class="line">	__shared__ int location_x_share[block];</span><br><span class="line">	__shared__ int location_y_share[block];</span><br><span class="line">	max_local[tid] = dev_max_local[tid];</span><br><span class="line">	location_x_share[tid] = location_x[tid];</span><br><span class="line">	location_y_share[tid] = location_y[tid];</span><br><span class="line">	__syncthreads();</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span>(int i=size/2;i&gt;0;i/=2)&#123;</span><br><span class="line">		<span class="keyword">if</span>(tid&lt;i)&#123;</span><br><span class="line">			<span class="keyword">if</span>(max_local[tid]&lt;max_local[tid+i])&#123;</span><br><span class="line">				max_local[tid] = max_local[tid+i];</span><br><span class="line">				location_x_share[tid] = location_x_share[tid+i];</span><br><span class="line">				location_y_share[tid] = location_y_share[tid+i];		</span><br><span class="line">			&#125;		</span><br><span class="line">		&#125;</span><br><span class="line">		__syncthreads();</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span>(tid==0)&#123;</span><br><span class="line">		location_x[0] = location_x_share[0];</span><br><span class="line">		location_y[0] = location_y_share[0];</span><br><span class="line">		dev_max_local[0] = max_local[0];	</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">int main(void)&#123;</span><br><span class="line">	int* matrix = new int[block*thread];</span><br><span class="line">	int* max_local = new int[block];</span><br><span class="line">	int* dev_matrix;</span><br><span class="line">	int* dev_max_local;</span><br><span class="line">	int* location_x;</span><br><span class="line">	int* location_y;</span><br><span class="line"></span><br><span class="line">	int max = 0;	</span><br><span class="line">	int xx=0,yy=0,maxx=0;</span><br><span class="line">	<span class="keyword">for</span>(int i=0;i&lt;block;i++)&#123;</span><br><span class="line">		<span class="keyword">for</span>(int j=0;j&lt;thread;j++)&#123;</span><br><span class="line">			matrix[block*i+j] = rand()%1000000;</span><br><span class="line">			max = matrix[block*i+j]&gt;max?matrix[block*i+j]:max;</span><br><span class="line">			<span class="keyword">if</span>(maxx &lt; matrix[block*i+j])&#123;</span><br><span class="line">				maxx = 	matrix[block*i+j];</span><br><span class="line">				xx=i;</span><br><span class="line">				yy=j;	</span><br><span class="line">			&#125;		</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">"%d "</span>,max);</span><br><span class="line">		max = 0;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"%d %d %d"</span>,maxx,xx,yy);</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"\n\n"</span>);</span><br><span class="line"></span><br><span class="line">	cudaMalloc((void**)&amp;dev_matrix,block*thread*sizeof(int));</span><br><span class="line">	cudaMalloc((void**)&amp;dev_max_local,block*sizeof(int));</span><br><span class="line">	cudaMalloc((void**)&amp;location_x,block*sizeof(int));</span><br><span class="line">	cudaMalloc((void**)&amp;location_y,block*sizeof(int));</span><br><span class="line">	cudaMemcpy(dev_matrix,matrix,block*thread*sizeof(int),cudaMemcpyHostToDevice);</span><br><span class="line">	max_spike_local&lt;&lt;&lt;block,thread&gt;&gt;&gt;(dev_matrix,dev_max_local,thread,location_x,location_y);</span><br><span class="line">	cudaMemcpy(max_local,dev_max_local,block*sizeof(int),cudaMemcpyDeviceToHost);</span><br><span class="line">	<span class="keyword">for</span>(int i=0;i&lt;block;i++)</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">"%d "</span>,max_local[i]);	</span><br><span class="line">	</span><br><span class="line">	max_spike_global&lt;&lt;&lt;1,block&gt;&gt;&gt;(dev_max_local,block,location_x,location_y);</span><br><span class="line">	cudaMemcpy(max_local,dev_max_local,block*sizeof(int),cudaMemcpyDeviceToHost);</span><br><span class="line">	int x,y;</span><br><span class="line">	x = new int[block];</span><br><span class="line">	y = new int[block];</span><br><span class="line">	cudaMemcpy(x,location_x,block*sizeof(int),cudaMemcpyDeviceToHost);</span><br><span class="line">	cudaMemcpy(y,location_y,block*sizeof(int),cudaMemcpyDeviceToHost);</span><br><span class="line"></span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"%d %d %d\n"</span>,max_local[0],x[0],y[0]);	</span><br><span class="line">	cudaFree(dev_matrix);</span><br><span class="line">	cudaFree(dev_max_local);</span><br><span class="line">	cudaFree(location_x);</span><br><span class="line">	cudaFree(location_y);	</span><br><span class="line">	free(matrix);</span><br><span class="line">	free(max_local);</span><br><span class="line">	free(x);</span><br><span class="line">	free(y);	</span><br><span class="line">	<span class="built_in">return</span> 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <h2 id="矩阵快速幂"><a href="#矩阵快速幂" class="headerlink" title="矩阵快速幂"></a>矩阵快速幂</h2><p>将上述的方法稍加推广，可以发现，快速幂的方法还可以应用在很多运算上。<br>二元运算⊙满足a^(n+m) = a^n⊙a^m，则可以使用快速幂。</p>
 <p>快速幂有个很常见的应用，就是矩阵快速幂，方法与上面一样，只不过要写一个矩阵的乘法。</p>
 <p>我的矩阵快速幂模板</p>
@@ -342,9 +343,7 @@
       
         <div class="post-tags">
           
-            <a href="/tags/算法/" rel="tag"># 算法</a>
-          
-            <a href="/tags/数论/" rel="tag"># 数论</a>
+            <a href="/tags/cuda并行计算/" rel="tag"># cuda并行计算</a>
           
         </div>
       
@@ -357,8 +356,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2018/09/14/faster-rcnn代码阅读（数据的集读入imdb，riodb）/" rel="next" title="faster rcnn 代码阅读笔记 ——数据集的读入（imdb，roidb）">
-                <i class="fa fa-chevron-left"></i> faster rcnn 代码阅读笔记 ——数据集的读入（imdb，roidb）
+              <a href="/2018/11/16/cuda分布式计算之内存处理/" rel="next" title="cuda分布式计算之内存处理">
+                <i class="fa fa-chevron-left"></i> cuda分布式计算之内存处理
               </a>
             
           </div>
@@ -367,8 +366,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2018/11/16/cuda分布式计算之内存处理/" rel="prev" title="cuda分布式计算之内存处理">
-                cuda分布式计算之内存处理 <i class="fa fa-chevron-right"></i>
+              <a href="/2018/11/16/cuda分布式计算之优化实例（矩阵相乘）/" rel="prev" title="cuda分布式计算之优化实例（矩阵相乘）">
+                cuda分布式计算之优化实例（矩阵相乘） <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -492,7 +491,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#快速幂"><span class="nav-number">1.</span> <span class="nav-text">快速幂</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#矩阵快速幂"><span class="nav-number">2.</span> <span class="nav-text">矩阵快速幂</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#题目"><span class="nav-number">3.</span> <span class="nav-text">题目</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Give-Candies（根据小费马定理降幂后快速幂）"><span class="nav-number">3.1.</span> <span class="nav-text">Give Candies（根据小费马定理降幂后快速幂）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Poor-God-Water-递推公式推导矩阵"><span class="nav-number">3.2.</span> <span class="nav-text">Poor God Water (递推公式推导矩阵)</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#并行归约"><span class="nav-number">1.</span> <span class="nav-text">并行归约</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#例子：计算矢量和"><span class="nav-number">1.1.</span> <span class="nav-text">例子：计算矢量和</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#例子：寻找矩阵最大值并且记录位置"><span class="nav-number">1.2.</span> <span class="nav-text">例子：寻找矩阵最大值并且记录位置</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#矩阵快速幂"><span class="nav-number">2.</span> <span class="nav-text">矩阵快速幂</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#题目"><span class="nav-number">3.</span> <span class="nav-text">题目</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Give-Candies（根据小费马定理降幂后快速幂）"><span class="nav-number">3.1.</span> <span class="nav-text">Give Candies（根据小费马定理降幂后快速幂）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Poor-God-Water-递推公式推导矩阵"><span class="nav-number">3.2.</span> <span class="nav-text">Poor God Water (递推公式推导矩阵)</span></a></li></ol></li></ol></div>
             
 
           </div>

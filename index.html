@@ -239,6 +239,405 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/11/16/cuda分布式计算之优化实例（矩阵相乘）/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="DingHH">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="魔力弹">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/11/16/cuda分布式计算之优化实例（矩阵相乘）/" itemprop="url">cuda分布式计算之优化实例（矩阵相乘）</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-11-16T23:14:22+08:00">
+                2018-11-16
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>用矩阵相乘为例，用gpu进行优化，一步步一共写出了三个版本，分别是使用全局内存，纹理内存和共享内存。为了编写方便，代码中默认把两个矩阵写成了一个大小。</p>
+<h2 id="全局内存"><a href="#全局内存" class="headerlink" title="全局内存"></a>全局内存</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#include&lt;stdio.h&gt;</span></span><br><span class="line"><span class="comment">#include&lt;cuda_runtime.h&gt;</span></span><br><span class="line"><span class="comment">#include&lt;time.h&gt;</span></span><br><span class="line">const int size = 512;</span><br><span class="line"></span><br><span class="line">__global__ void matMultCUDA(<span class="built_in">float</span>* a, <span class="built_in">float</span>* b, <span class="built_in">float</span>* c,int ha, int wa, int wb)&#123;//wa = hb</span><br><span class="line">	int tid = threadIdx.x;</span><br><span class="line">	int bid = blockIdx.x;</span><br><span class="line">	int offset = bid*blockDim.x+tid;</span><br><span class="line">	</span><br><span class="line">	int row = offset/wb;</span><br><span class="line">	int column = offset%wb;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">if</span>(row&lt;ha)&#123;</span><br><span class="line">		<span class="built_in">float</span> t = 0;</span><br><span class="line">		<span class="keyword">for</span>(int i=0;i&lt;wa;i++)</span><br><span class="line">			t += a[row*wa+i]*b[i*wb+column];</span><br><span class="line">		c[row*wb+column] = t;	</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">int main(void)&#123;</span><br><span class="line">	clock_t start,finish;</span><br><span class="line">	<span class="built_in">float</span>* a = new <span class="built_in">float</span>[size*size];</span><br><span class="line">	<span class="built_in">float</span>* b = new <span class="built_in">float</span>[size*size];</span><br><span class="line">	<span class="built_in">float</span>* c = new <span class="built_in">float</span>[size*size];</span><br><span class="line">	</span><br><span class="line">	<span class="built_in">float</span> *dev_a, *dev_b, *dev_c;</span><br><span class="line">	cudaMalloc((void**)&amp;dev_a,size*size*sizeof(<span class="built_in">float</span>));</span><br><span class="line">	cudaMalloc((void**)&amp;dev_b,size*size*sizeof(<span class="built_in">float</span>));</span><br><span class="line">	cudaMalloc((void**)&amp;dev_c,size*size*sizeof(<span class="built_in">float</span>));</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span>(int i=0;i&lt;size*size;i++)&#123;</span><br><span class="line">		a[i] = i;</span><br><span class="line">		b[i] = 2*i;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	cudaMemcpy(dev_a,a,size*size*sizeof(<span class="built_in">float</span>),cudaMemcpyHostToDevice);</span><br><span class="line">	cudaMemcpy(dev_b,b,size*size*sizeof(<span class="built_in">float</span>),cudaMemcpyHostToDevice);</span><br><span class="line"></span><br><span class="line">	start = clock();</span><br><span class="line">	matMultCUDA&lt;&lt;&lt;size,size&gt;&gt;&gt;(dev_a,dev_b,dev_c,size,size,size);	</span><br><span class="line">	finish = clock();</span><br><span class="line">	</span><br><span class="line">	cudaMemcpy(c,dev_c,size*size*sizeof(<span class="built_in">float</span>),cudaMemcpyDeviceToHost);</span><br><span class="line">	//<span class="keyword">for</span>(int i=0;i&lt;size;i++)&#123;</span><br><span class="line">	//	<span class="keyword">for</span>(int j=0;j&lt;size;j++)&#123;</span><br><span class="line">	//		<span class="built_in">printf</span>(<span class="string">"%.0f "</span>,c[i*size+j]);</span><br><span class="line">	//	&#125;</span><br><span class="line">	//	<span class="built_in">printf</span>(<span class="string">"\n"</span>);</span><br><span class="line">	//&#125;</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"%f\n"</span>,(<span class="built_in">float</span>)(finish-start)/CLOCKS_PER_SEC);</span><br><span class="line">	cudaFree(dev_a);</span><br><span class="line">	cudaFree(dev_b);</span><br><span class="line">	cudaFree(dev_c);</span><br><span class="line"></span><br><span class="line">	free(a);</span><br><span class="line">	free(b);</span><br><span class="line">	free(c);</span><br><span class="line">	<span class="built_in">return</span> 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="纹理内存"><a href="#纹理内存" class="headerlink" title="纹理内存"></a>纹理内存</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#include&lt;stdio.h&gt;</span></span><br><span class="line"><span class="comment">#include&lt;cuda_runtime.h&gt;</span></span><br><span class="line"><span class="comment">#include&lt;time.h&gt;</span></span><br><span class="line">const int size = 512;</span><br><span class="line"></span><br><span class="line">texture&lt;<span class="built_in">float</span>&gt; texA;</span><br><span class="line">texture&lt;<span class="built_in">float</span>&gt; texB;</span><br><span class="line"></span><br><span class="line">__global__ void matMultTexture(<span class="built_in">float</span>* c, int ha, int wa, int wb)&#123;</span><br><span class="line">	int tid = threadIdx.x;</span><br><span class="line">	int bid = blockIdx.x;</span><br><span class="line">	int offset = bid*blockDim.x+tid;</span><br><span class="line">	</span><br><span class="line">	int row = offset/wb;</span><br><span class="line">	int column = offset%wb;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">if</span>(row&lt;ha)&#123;</span><br><span class="line">		<span class="built_in">float</span> t = 0;</span><br><span class="line">		<span class="keyword">for</span>(int i=0;i&lt;wa;i++)&#123;</span><br><span class="line">			<span class="built_in">float</span> a = tex1Dfetch(texA,row*wa+i);</span><br><span class="line">			<span class="built_in">float</span> b = tex1Dfetch(texB,i*wb+column);</span><br><span class="line">			t += a*b;</span><br><span class="line">		&#125;</span><br><span class="line">		c[row*wb+column] = t;	</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">int main(void)&#123;</span><br><span class="line">	clock_t start,finish;</span><br><span class="line">	<span class="built_in">float</span>* a = new <span class="built_in">float</span>[size*size];</span><br><span class="line">	<span class="built_in">float</span>* b = new <span class="built_in">float</span>[size*size];</span><br><span class="line">	<span class="built_in">float</span>* c = new <span class="built_in">float</span>[size*size];</span><br><span class="line"></span><br><span class="line">	<span class="built_in">float</span> *dev_a, *dev_b, *dev_c;</span><br><span class="line">	cudaMalloc((void**)&amp;dev_a,size*size*sizeof(<span class="built_in">float</span>));</span><br><span class="line">	cudaMalloc((void**)&amp;dev_b,size*size*sizeof(<span class="built_in">float</span>));</span><br><span class="line">	cudaMalloc((void**)&amp;dev_c,size*size*sizeof(<span class="built_in">float</span>));</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span>(int i=0;i&lt;size*size;i++)&#123;</span><br><span class="line">		a[i] = i;</span><br><span class="line">		b[i] = 2*i;</span><br><span class="line">	&#125;</span><br><span class="line">	cudaMemcpy(dev_a,a,size*size*sizeof(<span class="built_in">float</span>),cudaMemcpyHostToDevice);</span><br><span class="line">	cudaMemcpy(dev_b,b,size*size*sizeof(<span class="built_in">float</span>),cudaMemcpyHostToDevice);</span><br><span class="line">	</span><br><span class="line">	cudaBindTexture(NULL,texA,dev_a);</span><br><span class="line">	cudaBindTexture(NULL,texB,dev_b);</span><br><span class="line"></span><br><span class="line">	start = clock();</span><br><span class="line">	matMultTexture&lt;&lt;&lt;size,size&gt;&gt;&gt;(dev_c,size,size,size);</span><br><span class="line">	finish = clock();</span><br><span class="line">	cudaMemcpy(c,dev_c,size*size*sizeof(<span class="built_in">float</span>),cudaMemcpyDeviceToHost);</span><br><span class="line">	//<span class="keyword">for</span>(int i=0;i&lt;size;i++)&#123;</span><br><span class="line">	//	<span class="keyword">for</span>(int j=0;j&lt;size;j++)&#123;</span><br><span class="line">	//		<span class="built_in">printf</span>(<span class="string">"%.0f "</span>,c[i*size+j]);</span><br><span class="line">	//	&#125;</span><br><span class="line">	//	<span class="built_in">printf</span>(<span class="string">"\n"</span>);</span><br><span class="line">	//&#125;</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"%f\n"</span>,(<span class="built_in">float</span>)(finish-start)/CLOCKS_PER_SEC);</span><br><span class="line">	cudaFree(dev_a);</span><br><span class="line">	cudaFree(dev_b);</span><br><span class="line">	cudaFree(dev_c);</span><br><span class="line">	cudaUnbindTexture(texA);</span><br><span class="line">	cudaUnbindTexture(texB);</span><br><span class="line">	free(a);</span><br><span class="line">	free(b);</span><br><span class="line">	free(c);</span><br><span class="line">	<span class="built_in">return</span> 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="共享内存"><a href="#共享内存" class="headerlink" title="共享内存"></a>共享内存</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">//对于核函数做出了改动，cpu部分代码与使用全局内存时相同</span><br><span class="line">__global__ void matMultCUDA(<span class="built_in">float</span>* a, <span class="built_in">float</span>* b, <span class="built_in">float</span>* c,int ha, int wa, int wb)&#123;//wa = hb</span><br><span class="line">	__shared__ <span class="built_in">float</span> data[size];	</span><br><span class="line">	int tid = threadIdx.x;</span><br><span class="line">	int bid = blockIdx.x;</span><br><span class="line">	int offset = bid*blockDim.x+tid;</span><br><span class="line">	</span><br><span class="line">	data[tid] = a[offset];</span><br><span class="line">	</span><br><span class="line">	__syncthreads();</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">for</span>(int i=0;i&lt;wb;i++)&#123;</span><br><span class="line">		<span class="built_in">float</span> t = 0;</span><br><span class="line">		<span class="keyword">for</span>(int j=0;j&lt;ha;j++)&#123;</span><br><span class="line">			t += data[j]*b[j*wb+i];</span><br><span class="line">		&#125;</span><br><span class="line">		c[bid*wb+i] = t;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/11/16/cuda分布计算之并行规约/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="DingHH">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="魔力弹">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/11/16/cuda分布计算之并行规约/" itemprop="url">cuda分布式计算之并行规约</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-11-16T23:09:22+08:00">
+                2018-11-16
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="并行归约"><a href="#并行归约" class="headerlink" title="并行归约"></a>并行归约</h2><p>对一个输入数组执行某种计算，产生一个更小的结果数组。</p>
+<p>适用场景：取最小、取最大、求和、平方和、逻辑与/或、向量点积。</p>
+<h3 id="例子：计算矢量和"><a href="#例子：计算矢量和" class="headerlink" title="例子：计算矢量和"></a>例子：计算矢量和</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#include&lt;stdio.h&gt;</span></span><br><span class="line"><span class="comment">#include&lt;cuda_runtime.h&gt;</span></span><br><span class="line"></span><br><span class="line">const int size = 1024;</span><br><span class="line"></span><br><span class="line">__global__ void parallel_reduction_sum(int* in_vec, int* out_vec, int size)&#123;</span><br><span class="line">	int tid = threadIdx.x;</span><br><span class="line">	int *local_vec = in_vec + blockDim.x * blockIdx.x;</span><br><span class="line">	<span class="keyword">if</span>(tid + blockDim.x*blockIdx.x&gt;=size)</span><br><span class="line">		<span class="built_in">return</span>;	</span><br><span class="line">	int step = 2;</span><br><span class="line">	<span class="keyword">while</span>(step &lt;= blockDim.x)&#123;</span><br><span class="line">		<span class="keyword">if</span>(tid % step == 0)</span><br><span class="line">			local_vec[tid]+=local_vec[tid+step/2];</span><br><span class="line">		__syncthreads();</span><br><span class="line">		step*=2;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span>(tid == 0 ) </span><br><span class="line">		out_vec[blockIdx.x] = local_vec[0];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">int <span class="function"><span class="title">main</span></span>()&#123;</span><br><span class="line">	int *in_data,*out_data;</span><br><span class="line">	in_data = new int[size];</span><br><span class="line">	out_data = new int[size];</span><br><span class="line">	</span><br><span class="line">	int sum = 0;</span><br><span class="line">	<span class="keyword">for</span>(int i=0;i&lt;size;i++)&#123;</span><br><span class="line">		in_data[i] = i;</span><br><span class="line">		sum += i;	</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"%d\n"</span>,sum);</span><br><span class="line"></span><br><span class="line">	int *in_vec,*out_vec;</span><br><span class="line">	cudaMalloc((void**)&amp;in_vec,size*sizeof(int));</span><br><span class="line">	cudaMalloc((void**)&amp;out_vec,size*sizeof(int));</span><br><span class="line"></span><br><span class="line">	cudaMemcpy(in_vec,in_data,size*sizeof(int),cudaMemcpyHostToDevice);</span><br><span class="line">	parallel_reduction_sum&lt;&lt;&lt;16,64&gt;&gt;&gt;(in_vec,out_vec,size);</span><br><span class="line">	cudaMemcpy(out_data,out_vec,size*sizeof(int),cudaMemcpyDeviceToHost);</span><br><span class="line"></span><br><span class="line">	sum = 0;</span><br><span class="line">	<span class="keyword">for</span>(int i=0;i&lt;16;i++)</span><br><span class="line">		sum+=out_data[i];</span><br><span class="line"></span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"%d\n"</span>,sum);</span><br><span class="line">	<span class="built_in">return</span> 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="例子：寻找矩阵最大值并且记录位置"><a href="#例子：寻找矩阵最大值并且记录位置" class="headerlink" title="例子：寻找矩阵最大值并且记录位置"></a>例子：寻找矩阵最大值并且记录位置</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#include&lt;stdio.h&gt;</span></span><br><span class="line"><span class="comment">#include&lt;cuda_runtime.h&gt;</span></span><br><span class="line"></span><br><span class="line">const int block = 256;</span><br><span class="line">const int thread = 256;</span><br><span class="line"></span><br><span class="line">__global__ void max_spike_local(int* dev_matrix,int* dev_max_local,int size, int *location_x,int *location_y)&#123;</span><br><span class="line">	int tid = threadIdx.x;</span><br><span class="line">	__shared__ int local_matrix[thread];</span><br><span class="line">	__shared__ int location[thread];</span><br><span class="line">	local_matrix[tid] = dev_matrix[tid+blockDim.x*blockIdx.x];</span><br><span class="line">	location[tid] = tid + blockDim.x*blockIdx.x;	</span><br><span class="line">	__syncthreads();</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span>(int i=size/2;i&gt;0;i/=2)&#123;</span><br><span class="line">		<span class="keyword">if</span>(tid&lt;i)&#123;	</span><br><span class="line">			<span class="keyword">if</span>(local_matrix[tid] &lt; local_matrix[tid+i])&#123;</span><br><span class="line">				local_matrix[tid] = local_matrix[tid+i];</span><br><span class="line">				location[tid] = location[tid+i];			</span><br><span class="line">			&#125;					</span><br><span class="line">		&#125;	</span><br><span class="line">		__syncthreads();</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span>(tid==0)&#123;</span><br><span class="line">		dev_max_local[blockIdx.x] = local_matrix[0];</span><br><span class="line">		location_x[blockIdx.x] = blockIdx.x;</span><br><span class="line">		location_y[blockIdx.x] = location[tid]-blockIdx.x*thread;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">__global__ void max_spike_global(int* dev_max_local, int size,int *location_x, int* location_y)&#123;</span><br><span class="line">	int tid = threadIdx.x;</span><br><span class="line">	__shared__ int max_local[block];</span><br><span class="line">	__shared__ int location_x_share[block];</span><br><span class="line">	__shared__ int location_y_share[block];</span><br><span class="line">	max_local[tid] = dev_max_local[tid];</span><br><span class="line">	location_x_share[tid] = location_x[tid];</span><br><span class="line">	location_y_share[tid] = location_y[tid];</span><br><span class="line">	__syncthreads();</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span>(int i=size/2;i&gt;0;i/=2)&#123;</span><br><span class="line">		<span class="keyword">if</span>(tid&lt;i)&#123;</span><br><span class="line">			<span class="keyword">if</span>(max_local[tid]&lt;max_local[tid+i])&#123;</span><br><span class="line">				max_local[tid] = max_local[tid+i];</span><br><span class="line">				location_x_share[tid] = location_x_share[tid+i];</span><br><span class="line">				location_y_share[tid] = location_y_share[tid+i];		</span><br><span class="line">			&#125;		</span><br><span class="line">		&#125;</span><br><span class="line">		__syncthreads();</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span>(tid==0)&#123;</span><br><span class="line">		location_x[0] = location_x_share[0];</span><br><span class="line">		location_y[0] = location_y_share[0];</span><br><span class="line">		dev_max_local[0] = max_local[0];	</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">int main(void)&#123;</span><br><span class="line">	int* matrix = new int[block*thread];</span><br><span class="line">	int* max_local = new int[block];</span><br><span class="line">	int* dev_matrix;</span><br><span class="line">	int* dev_max_local;</span><br><span class="line">	int* location_x;</span><br><span class="line">	int* location_y;</span><br><span class="line"></span><br><span class="line">	int max = 0;	</span><br><span class="line">	int xx=0,yy=0,maxx=0;</span><br><span class="line">	<span class="keyword">for</span>(int i=0;i&lt;block;i++)&#123;</span><br><span class="line">		<span class="keyword">for</span>(int j=0;j&lt;thread;j++)&#123;</span><br><span class="line">			matrix[block*i+j] = rand()%1000000;</span><br><span class="line">			max = matrix[block*i+j]&gt;max?matrix[block*i+j]:max;</span><br><span class="line">			<span class="keyword">if</span>(maxx &lt; matrix[block*i+j])&#123;</span><br><span class="line">				maxx = 	matrix[block*i+j];</span><br><span class="line">				xx=i;</span><br><span class="line">				yy=j;	</span><br><span class="line">			&#125;		</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">"%d "</span>,max);</span><br><span class="line">		max = 0;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"%d %d %d"</span>,maxx,xx,yy);</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"\n\n"</span>);</span><br><span class="line"></span><br><span class="line">	cudaMalloc((void**)&amp;dev_matrix,block*thread*sizeof(int));</span><br><span class="line">	cudaMalloc((void**)&amp;dev_max_local,block*sizeof(int));</span><br><span class="line">	cudaMalloc((void**)&amp;location_x,block*sizeof(int));</span><br><span class="line">	cudaMalloc((void**)&amp;location_y,block*sizeof(int));</span><br><span class="line">	cudaMemcpy(dev_matrix,matrix,block*thread*sizeof(int),cudaMemcpyHostToDevice);</span><br><span class="line">	max_spike_local&lt;&lt;&lt;block,thread&gt;&gt;&gt;(dev_matrix,dev_max_local,thread,location_x,location_y);</span><br><span class="line">	cudaMemcpy(max_local,dev_max_local,block*sizeof(int),cudaMemcpyDeviceToHost);</span><br><span class="line">	<span class="keyword">for</span>(int i=0;i&lt;block;i++)</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">"%d "</span>,max_local[i]);	</span><br><span class="line">	</span><br><span class="line">	max_spike_global&lt;&lt;&lt;1,block&gt;&gt;&gt;(dev_max_local,block,location_x,location_y);</span><br><span class="line">	cudaMemcpy(max_local,dev_max_local,block*sizeof(int),cudaMemcpyDeviceToHost);</span><br><span class="line">	int x,y;</span><br><span class="line">	x = new int[block];</span><br><span class="line">	y = new int[block];</span><br><span class="line">	cudaMemcpy(x,location_x,block*sizeof(int),cudaMemcpyDeviceToHost);</span><br><span class="line">	cudaMemcpy(y,location_y,block*sizeof(int),cudaMemcpyDeviceToHost);</span><br><span class="line"></span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"%d %d %d\n"</span>,max_local[0],x[0],y[0]);	</span><br><span class="line">	cudaFree(dev_matrix);</span><br><span class="line">	cudaFree(dev_max_local);</span><br><span class="line">	cudaFree(location_x);</span><br><span class="line">	cudaFree(location_y);	</span><br><span class="line">	free(matrix);</span><br><span class="line">	free(max_local);</span><br><span class="line">	free(x);</span><br><span class="line">	free(y);	</span><br><span class="line">	<span class="built_in">return</span> 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="矩阵快速幂"><a href="#矩阵快速幂" class="headerlink" title="矩阵快速幂"></a>矩阵快速幂</h2><p>将上述的方法稍加推广，可以发现，快速幂的方法还可以应用在很多运算上。<br>二元运算⊙满足a^(n+m) = a^n⊙a^m，则可以使用快速幂。</p>
+<p>快速幂有个很常见的应用，就是矩阵快速幂，方法与上面一样，只不过要写一个矩阵的乘法。</p>
+<p>我的矩阵快速幂模板</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#define ll long long</span></span><br><span class="line"><span class="comment">#define MOD 1000000007</span></span><br><span class="line">using namespace std;</span><br><span class="line">const int maxn = 100;</span><br><span class="line">struct mat&#123;</span><br><span class="line">    ll m[maxn][maxn];</span><br><span class="line">&#125;unit;</span><br><span class="line"></span><br><span class="line">mat mat_mul(mat a, mat b, int n)&#123;</span><br><span class="line">    mat matrix;</span><br><span class="line">    memset(matrix.m,0,sizeof(matrix.m));</span><br><span class="line">    <span class="keyword">for</span>(int i=0;i&lt;n;i++)</span><br><span class="line">    <span class="keyword">for</span>(int j=0;j&lt;n;j++)</span><br><span class="line">    <span class="keyword">for</span>(int k=0;k&lt;n;k++)&#123;</span><br><span class="line">        matrix.m[i][j]+=a.m[i][k]*b.m[k][j];</span><br><span class="line">        matrix.m[i][j]%=MOD;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">return</span> matrix;</span><br><span class="line">&#125;</span><br><span class="line">mat quick_pow(ll num, int n)&#123;</span><br><span class="line">    mat ans=unit,tmp=unit;</span><br><span class="line">    <span class="keyword">while</span>(num)&#123;</span><br><span class="line">        <span class="keyword">if</span>(num&amp;1)&#123;</span><br><span class="line">            ans = mat_mul(ans,tmp,n);</span><br><span class="line">        &#125;</span><br><span class="line">        tmp = mat_mul(tmp,tmp,n);</span><br><span class="line">        num &gt;&gt;= 1;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">return</span> ans;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="题目"><a href="#题目" class="headerlink" title="题目"></a>题目</h2><h3 id="Give-Candies（根据小费马定理降幂后快速幂）"><a href="#Give-Candies（根据小费马定理降幂后快速幂）" class="headerlink" title="Give Candies（根据小费马定理降幂后快速幂）"></a>Give Candies（根据小费马定理降幂后快速幂）</h3><p>题目链接:<a href="https://nanti.jisuanke.com/t/31716" target="_blank" rel="noopener">ACM-ICPC 2018 焦作赛区网络预赛G题</a><br>根据题目容易找到答案就为2^(n-1)，然而n的取值范围为100000次方，就算用字符串存再用快速幂也炸时间了。这里就刚好搬出小费马定理了：</p>
+<p>(a^n)%p = a^(n%(p-1))%p</p>
+<p>因此，只需要先求出n%(p-1)，再用这个数对a做快速幂就ok啦！</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#include &lt;iostream&gt;</span></span><br><span class="line"><span class="comment">#include &lt;cstdio&gt;</span></span><br><span class="line"><span class="comment">#include &lt;cstring&gt;</span></span><br><span class="line"><span class="comment">#define ll long long</span></span><br><span class="line"><span class="comment">#define MOD 1000000007</span></span><br><span class="line">using namespace std;</span><br><span class="line"></span><br><span class="line">char n[100050];</span><br><span class="line"></span><br><span class="line">//小费马定理:a^n%p = a^(n%(p-1))%p</span><br><span class="line"></span><br><span class="line">ll quick_pow(ll a, ll n)&#123;</span><br><span class="line">    ll ans = 1;</span><br><span class="line">    <span class="keyword">while</span>(n)&#123;</span><br><span class="line">        <span class="keyword">if</span>(n&amp;1) ans=(ans*a)%MOD;</span><br><span class="line">        a=(a*a)%MOD;</span><br><span class="line">        n &gt;&gt;= 1;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">return</span> ans;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">int main()</span><br><span class="line">&#123;</span><br><span class="line">    int t;</span><br><span class="line">    scanf(<span class="string">"%d"</span>,&amp;t);</span><br><span class="line">    <span class="keyword">while</span>(t--)&#123;</span><br><span class="line">        scanf(<span class="string">"%s"</span>,n);</span><br><span class="line">        int l = strlen(n);</span><br><span class="line">        ll sum = 0;</span><br><span class="line">		/求出n%(p-1）</span><br><span class="line">        <span class="keyword">for</span>(int i=0;i&lt;l;i++)&#123;</span><br><span class="line">            sum *= 10;</span><br><span class="line">            sum += n[i] - <span class="string">'0'</span>;</span><br><span class="line">            sum %= MOD-1;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"%lld\n"</span>,quick_pow(2,sum-1));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">return</span> 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="Poor-God-Water-递推公式推导矩阵"><a href="#Poor-God-Water-递推公式推导矩阵" class="headerlink" title="Poor God Water (递推公式推导矩阵)"></a>Poor God Water (递推公式推导矩阵)</h3><p>题目链接:<a href="https://nanti.jisuanke.com/t/31721" target="_blank" rel="noopener">ACM-ICPC 2018 焦作赛区网络预赛L题</a></p>
+<p>是看了<a href="http://www.cnblogs.com/shinianhuanniyijuhaojiubujian/p/9651533.html" target="_blank" rel="noopener">这个</a>博客才知道怎么做的，用矩阵快速幂真是妙啊0_0</p>
+<p>然后是我的代码</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#include &lt;iostream&gt;</span></span><br><span class="line"><span class="comment">#include &lt;vector&gt;</span></span><br><span class="line"><span class="comment">#include &lt;string&gt;</span></span><br><span class="line"><span class="comment">#include &lt;cstdio&gt;</span></span><br><span class="line"><span class="comment">#include &lt;cstring&gt;</span></span><br><span class="line"><span class="comment">#include &lt;ctime&gt;</span></span><br><span class="line"><span class="comment">#define ll long long</span></span><br><span class="line"><span class="comment">#define MOD 1000000007</span></span><br><span class="line">using namespace std;</span><br><span class="line"></span><br><span class="line">struct mat&#123;</span><br><span class="line">    ll m[9][9];</span><br><span class="line">&#125;unit;</span><br><span class="line"></span><br><span class="line">void <span class="function"><span class="title">init</span></span>()&#123;</span><br><span class="line">    memset(unit.m,0,sizeof(unit.m));</span><br><span class="line">    unit.m[5][0] = unit.m[7][0] = 1;</span><br><span class="line">    unit.m[3][1] = unit.m[5][1] = unit.m[7][1] = 1;</span><br><span class="line">    unit.m[4][2] = unit.m[6][2] = 1;</span><br><span class="line">    unit.m[0][3] = unit.m[6][3] = 1;</span><br><span class="line">    unit.m[1][4] = unit.m[8][4] = 1;</span><br><span class="line">    unit.m[1][5] = unit.m[2][5] = unit.m[8][5] = 1;</span><br><span class="line">    unit.m[0][6] = unit.m[4][6] = 1;</span><br><span class="line">    unit.m[3][7] = unit.m[5][7] = 1;</span><br><span class="line">    unit.m[1][8] = unit.m[2][8] = 1;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">mat mat_mul(mat a, mat b)&#123;</span><br><span class="line">    mat matrix;</span><br><span class="line">    memset(matrix.m,0,sizeof(matrix.m));</span><br><span class="line">    <span class="keyword">for</span>(int i=0;i&lt;9;i++)</span><br><span class="line">    <span class="keyword">for</span>(int j=0;j&lt;9;j++)</span><br><span class="line">    <span class="keyword">for</span>(int k=0;k&lt;9;k++)&#123;</span><br><span class="line">        matrix.m[i][j]+=a.m[i][k]*b.m[k][j];</span><br><span class="line">        matrix.m[i][j]%=MOD;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">return</span> matrix;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">void print_mat(mat a)&#123;</span><br><span class="line">    <span class="keyword">for</span>(int i=0;i&lt;9;i++)&#123;</span><br><span class="line">        <span class="keyword">for</span>(int j=0;j&lt;9;j++)&#123;</span><br><span class="line">            <span class="built_in">printf</span>(<span class="string">"%lld "</span>,a.m[i][j]);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"\n"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"\n"</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">mat quick_pow(ll num)&#123;</span><br><span class="line">    mat ans=unit,tmp=unit;</span><br><span class="line">//    print_mat(ans);</span><br><span class="line">//    print_mat(tmp);</span><br><span class="line">    <span class="keyword">while</span>(num)&#123;</span><br><span class="line">        <span class="keyword">if</span>(num&amp;1)&#123;</span><br><span class="line">            ans = mat_mul(ans,tmp);</span><br><span class="line">//            print_mat(ans);</span><br><span class="line">        &#125;</span><br><span class="line">        tmp = mat_mul(tmp,tmp);</span><br><span class="line">        num &gt;&gt;= 1;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">return</span> ans;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">int <span class="function"><span class="title">main</span></span>()&#123;</span><br><span class="line">    int n;</span><br><span class="line">    scanf(<span class="string">"%d"</span>,&amp;n);</span><br><span class="line">    ll num;</span><br><span class="line">    init();</span><br><span class="line">    <span class="keyword">while</span>(n--)&#123;</span><br><span class="line">        scanf(<span class="string">"%lld"</span>,&amp;num);</span><br><span class="line">        <span class="keyword">if</span>(num==1)&#123;</span><br><span class="line">            <span class="built_in">printf</span>(<span class="string">"3\n"</span>);</span><br><span class="line">            <span class="built_in">continue</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span>(num==2)&#123;</span><br><span class="line">            <span class="built_in">printf</span>(<span class="string">"9\n"</span>);</span><br><span class="line">            <span class="built_in">continue</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        mat res = quick_pow(num-3);</span><br><span class="line">        ll ans = 0;</span><br><span class="line">        <span class="keyword">for</span>(int i=0;i&lt;9;i++)</span><br><span class="line">            <span class="keyword">for</span>(int j=0;j&lt;9;j++)&#123;</span><br><span class="line">                ans += res.m[i][j];</span><br><span class="line">                ans %= MOD;</span><br><span class="line">            &#125;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"%lld\n"</span>,ans);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">return</span> 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/11/16/cuda分布式计算之内存处理/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="DingHH">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="魔力弹">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/11/16/cuda分布式计算之内存处理/" itemprop="url">cuda分布式计算之内存处理</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-11-16T22:35:38+08:00">
+                2018-11-16
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>在复习cuda并行计算的时候，做的一些整理，对GPU上的存储器都通过一个小例子使用了一遍。</p>
+<h2 id="共享内存"><a href="#共享内存" class="headerlink" title="共享内存"></a>共享内存</h2><p>同一个线程块共享这块内存。</p>
+<p>声明：__share__ float cache[threadPerBlock] (在核函数内声明)</p>
+<p>同步：__syncthreads()</p>
+<p>确保线程块中的每个线程都执行完__syncthreads()前的语句才会执行下一条语句。</p>
+<p>注意：不要将 __syncthreads()置于发散分支中，这样一些线程永远也无法执行 __syncthreads()，导致该线程块中的所有线程保持等待。</p>
+<p>例子：向量点积（使用到归约的思想）</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#include&lt;stdio.h&gt;</span></span><br><span class="line"><span class="comment">#include&lt;cuda_runtime.h&gt;</span></span><br><span class="line"></span><br><span class="line">const int N = 33*1024;</span><br><span class="line">const int threadPerBlock = 256;</span><br><span class="line">const int blockPerGrid = min(32,(N+threadPerBlock-1)/threadPerBlock);</span><br><span class="line"></span><br><span class="line">__global__ void dot(<span class="built_in">float</span> *a, <span class="built_in">float</span> *b, <span class="built_in">float</span> *sum)&#123;</span><br><span class="line">	__shared__ <span class="built_in">float</span> cache[threadPerBlock];</span><br><span class="line">	</span><br><span class="line">	int tid = threadIdx.x + blockIdx.x * blockDim.x;</span><br><span class="line">	int cacheId = threadIdx.x;	</span><br><span class="line">	<span class="built_in">float</span> tmp;	</span><br><span class="line">	<span class="keyword">while</span>(tid&lt;N)&#123;</span><br><span class="line">		tmp += a[tid]*b[tid];</span><br><span class="line">		tid+=blockDim.x*gridDim.x;	</span><br><span class="line">	&#125;</span><br><span class="line">	cache[cacheId] = tmp;</span><br><span class="line">	__syncthreads();</span><br><span class="line"></span><br><span class="line">	//reduction</span><br><span class="line">	int i = blockDim.x/2;</span><br><span class="line">	<span class="keyword">while</span>(i&gt;0)&#123;</span><br><span class="line">		<span class="keyword">if</span>(cacheId&lt;i)&#123;</span><br><span class="line">			cache[cacheId] += cache[cacheId+i];		</span><br><span class="line">		&#125;</span><br><span class="line">		__syncthreads();</span><br><span class="line">		i = i/2;	</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span>(cacheId == 0)&#123;</span><br><span class="line">		sum[blockIdx.x] = cache[0];	</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">int main(void)&#123;</span><br><span class="line">	<span class="built_in">float</span> *a,*b,*partial_sum;</span><br><span class="line">	<span class="built_in">float</span> *dev_a,*dev_b,*dev_partial_sum;</span><br><span class="line"></span><br><span class="line">	a = (<span class="built_in">float</span>*)malloc(N*sizeof(<span class="built_in">float</span>));</span><br><span class="line">	b = (<span class="built_in">float</span>*)malloc(N*sizeof(<span class="built_in">float</span>));</span><br><span class="line">	partial_sum = (<span class="built_in">float</span>*)malloc(blockPerGrid*sizeof(<span class="built_in">float</span>));</span><br><span class="line">	</span><br><span class="line">	cudaMalloc((void**)&amp;dev_a,N*sizeof(<span class="built_in">float</span>));</span><br><span class="line">	cudaMalloc((void**)&amp;dev_b,N*sizeof(<span class="built_in">float</span>));</span><br><span class="line">	cudaMalloc((void**)&amp;dev_partial_sum,blockPerGrid*sizeof(<span class="built_in">float</span>));</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span>(int i=0;i&lt;N;i++)&#123;</span><br><span class="line">		a[i] = i;</span><br><span class="line">		b[i] = i*2;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	cudaMemcpy(dev_a,a,N*sizeof(<span class="built_in">float</span>),cudaMemcpyHostToDevice);</span><br><span class="line">	cudaMemcpy(dev_b,b,N*sizeof(<span class="built_in">float</span>),cudaMemcpyHostToDevice);</span><br><span class="line">	</span><br><span class="line">	dot&lt;&lt;&lt;blockPerGrid,threadPerBlock&gt;&gt;&gt;(dev_a,dev_b,dev_partial_sum);</span><br><span class="line"></span><br><span class="line">	cudaMemcpy(partial_sum,dev_partial_sum,blockPerGrid*sizeof(<span class="built_in">float</span>),cudaMemcpyDeviceToHost);</span><br><span class="line"></span><br><span class="line">	<span class="built_in">float</span> ans = 0;</span><br><span class="line">	<span class="keyword">for</span>(int i=0;i&lt;blockPerGrid;i++)</span><br><span class="line">		ans += partial_sum[i];</span><br><span class="line"></span><br><span class="line">	<span class="comment">#define sum_squares(x) (x*(x+1)*(2*x+1)/6)	</span></span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"%.10g\n"</span>,(double)2*(N-1)*N*(2*N-1)/6);</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"%.10g\n"</span>,ans);</span><br><span class="line">	</span><br><span class="line">	cudaFree(dev_a);</span><br><span class="line">	cudaFree(dev_b);</span><br><span class="line">	cudaFree(dev_partial_sum);</span><br><span class="line"></span><br><span class="line">	free(a);</span><br><span class="line">	free(b);</span><br><span class="line">	free(partial_sum);</span><br><span class="line"></span><br><span class="line">	<span class="built_in">return</span> 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="常量内存"><a href="#常量内存" class="headerlink" title="常量内存"></a>常量内存</h2><p>用于保存核函数执行期间不会发生变化的数据。NVIDIA只提供了64KB的常量内存。与全局存储器不同，它拥有缓存，访问常量内存数据的时间仅为全局存储器的1/16。</p>
+<p>适用情形：权重数组，系数矩阵，搜索偏移序列</p>
+<p>使用方法：<br> 1）在定义时初始化常量内存，然后在kernel里面直接使用<br>    __constant__ int weight[10] = {0,1,2,3,4,5,6,7,8,9};</p>
+<p> 2）定义一个constant数组，然后使用函数进行复制<br>    __constant__ int weight[10];<br>    int w[10] = {0,1,2,3,4,5,6,7,8,9};<br>    cudaMemcpyToSymbol(weight,w,sizeof(weight));</p>
+<p>例子:为字符串“hdjik CUDA”每一位字符进行偏移，偏移值存储在常量内存中</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#include&lt;stdio.h&gt;</span></span><br><span class="line"><span class="comment">#include&lt;cuda_runtime.h&gt;</span></span><br><span class="line"></span><br><span class="line">__constant__ char p_HelloCUDA[11];</span><br><span class="line">__constant__ int t_HelloCUDA[11] = &#123;0,1,2,3,4,5,6,7,8,9,10&#125;;</span><br><span class="line">__constant__ int num = 11;</span><br><span class="line"></span><br><span class="line">__global__ static void HelloCUDA(char* result)&#123;</span><br><span class="line">	int i = 0;</span><br><span class="line">	<span class="keyword">for</span>(i=0; i&lt;num; i++)</span><br><span class="line">		result[i] = p_HelloCUDA[i] + t_HelloCUDA[i];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">int main(int argc, char* argv[])&#123;</span><br><span class="line">	char helloCUDA[] = <span class="string">"Hdjik CUDA"</span>;</span><br><span class="line">	char *device_result;</span><br><span class="line">	char host_result[12] = &#123;0&#125;;</span><br><span class="line"></span><br><span class="line">	cudaMalloc((void**)&amp;device_result,11*sizeof(char));</span><br><span class="line">	cudaMemcpyToSymbol(p_HelloCUDA, helloCUDA,11*sizeof(char));</span><br><span class="line"></span><br><span class="line">	HelloCUDA&lt;&lt;&lt;1,1,0&gt;&gt;&gt;(device_result);</span><br><span class="line">	cudaMemcpy(&amp;host_result,device_result,11*sizeof(char),cudaMemcpyDeviceToHost);</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"%s\n"</span>,host_result);</span><br><span class="line">	cudaFree(device_result);</span><br><span class="line">	<span class="built_in">return</span> 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="纹理内存"><a href="#纹理内存" class="headerlink" title="纹理内存"></a>纹理内存</h2><p>一种只读存储器，专门为那些在内存访问模式中存在大量空间局部性的图形应用程序设计。在计算应用中，适合于邻近线程读取的内存位置非常接近的情况。（不需要内存对齐）</p>
+<p><img src="F:\hexo\blog\source\picture\1.png" alt=""></p>
+<p>声明: texture&lt;type,Dim,ReadMode&gt;texRef; (Dim默认为1,ReadMode默认为cudaReadModeElementType)</p>
+<p>使用：<br>  1）将变量绑定到内存缓冲区（数据上传至设备缓存，核函数中可以直接访问）<br>     cudaBinkTexture(offset, texRef, devPre, desc, UINT_MAX);<br>     (后两个参数可省略)</p>
+<p>  2）读取纹理内存中的数据方法<br>     text1Dfetch（）<br>     访问texRef数组的二个元素：tex1Dfetch（texRef, 1);</p>
+<p>  3）取消绑定纹理内存，释放空间<br>     cudaUnbindTexture(texRef);</p>
+<p>例子：    用字符串A给字符串B赋值</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#include&lt;stdio.h&gt;</span></span><br><span class="line"><span class="comment">#include&lt;cuda_runtime.h&gt;</span></span><br><span class="line"></span><br><span class="line">const int len = 100;</span><br><span class="line"></span><br><span class="line">texture&lt;int&gt; texref;</span><br><span class="line"></span><br><span class="line">__global__ void blending_texture(int* dev_target,int size)&#123;</span><br><span class="line">	int tid = threadIdx.x + blockIdx.x*blockDim.x;</span><br><span class="line">	<span class="keyword">if</span>(tid&lt;size)&#123;</span><br><span class="line">		dev_target[tid] = tex1Dfetch(texref,tid);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">int <span class="function"><span class="title">main</span></span>()&#123;</span><br><span class="line">	int *a,*b;</span><br><span class="line">	a = new int[len];</span><br><span class="line">	b = new int[len];</span><br><span class="line"></span><br><span class="line">	int *dev_source,*dev_target;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span>(int i=0;i&lt;len;i++)</span><br><span class="line">		a[i] = i;</span><br><span class="line"></span><br><span class="line">	cudaMalloc((void**)&amp;dev_source,len*sizeof(int));</span><br><span class="line">	cudaMalloc((void**)&amp;dev_target,len*sizeof(int));</span><br><span class="line">	cudaMemcpy(dev_source,a,len*sizeof(int),cudaMemcpyHostToDevice);</span><br><span class="line">	cudaBindTexture(NULL,texref,dev_source);	</span><br><span class="line"></span><br><span class="line">	blending_texture &lt;&lt;&lt;10,10&gt;&gt;&gt; (dev_target,100);</span><br><span class="line">	cudaMemcpy(b,dev_target,len*sizeof(int),cudaMemcpyDeviceToHost);</span><br><span class="line">	cudaUnbindTexture(texref);</span><br><span class="line">	cudaFree(dev_source);</span><br><span class="line">	cudaFree(dev_target);</span><br><span class="line">	<span class="keyword">for</span>(int i=0;i&lt;len;i++)</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">"%d "</span>,a[i]);	</span><br><span class="line">	<span class="keyword">for</span>(int i=0;i&lt;len;i++)</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">"%d "</span>,b[i]);</span><br><span class="line">	<span class="built_in">return</span> 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/09/18/快速幂/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -543,7 +942,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">2</span>
+                  <span class="site-state-item-count">5</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -556,7 +955,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">5</span>
+                  <span class="site-state-item-count">6</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
