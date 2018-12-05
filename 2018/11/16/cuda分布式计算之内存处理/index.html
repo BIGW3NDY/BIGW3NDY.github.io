@@ -87,12 +87,12 @@
 <meta property="og:site_name" content="魔力弹">
 <meta property="og:description" content="在复习cuda并行计算的时候，做的一些整理，对GPU上的存储器都通过一个小例子使用了一遍。 共享内存同一个线程块共享这块内存。 声明：__share__ float cache[threadPerBlock] (在核函数内声明) 同步：__syncthreads() 确保线程块中的每个线程都执行完__syncthreads()前的语句才会执行下一条语句。 注意：不要将 __syncthreads(">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="http://yoursite.com/2018/11/16/cuda分布式计算之内存处理/picture/1.jpg">
-<meta property="og:updated_time" content="2018-12-04T13:46:52.328Z">
+<meta property="og:image" content="http://yoursite.com/images/1.png">
+<meta property="og:updated_time" content="2018-12-05T13:01:56.260Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="cuda分布式计算之内存处理">
 <meta name="twitter:description" content="在复习cuda并行计算的时候，做的一些整理，对GPU上的存储器都通过一个小例子使用了一遍。 共享内存同一个线程块共享这块内存。 声明：__share__ float cache[threadPerBlock] (在核函数内声明) 同步：__syncthreads() 确保线程块中的每个线程都执行完__syncthreads()前的语句才会执行下一条语句。 注意：不要将 __syncthreads(">
-<meta name="twitter:image" content="http://yoursite.com/2018/11/16/cuda分布式计算之内存处理/picture/1.jpg">
+<meta name="twitter:image" content="http://yoursite.com/images/1.png">
 
 
 
@@ -288,6 +288,16 @@
 
           
             
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2018/11/16/cuda分布式计算之内存处理/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count valine-comment-count" data-xid="/2018/11/16/cuda分布式计算之内存处理/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
           
 
           
@@ -327,7 +337,7 @@
 <p>例子:为字符串“hdjik CUDA”每一位字符进行偏移，偏移值存储在常量内存中</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#include&lt;stdio.h&gt;</span></span><br><span class="line"><span class="comment">#include&lt;cuda_runtime.h&gt;</span></span><br><span class="line"></span><br><span class="line">__constant__ char p_HelloCUDA[11];</span><br><span class="line">__constant__ int t_HelloCUDA[11] = &#123;0,1,2,3,4,5,6,7,8,9,10&#125;;</span><br><span class="line">__constant__ int num = 11;</span><br><span class="line"></span><br><span class="line">__global__ static void HelloCUDA(char* result)&#123;</span><br><span class="line">	int i = 0;</span><br><span class="line">	<span class="keyword">for</span>(i=0; i&lt;num; i++)</span><br><span class="line">		result[i] = p_HelloCUDA[i] + t_HelloCUDA[i];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">int main(int argc, char* argv[])&#123;</span><br><span class="line">	char helloCUDA[] = <span class="string">"Hdjik CUDA"</span>;</span><br><span class="line">	char *device_result;</span><br><span class="line">	char host_result[12] = &#123;0&#125;;</span><br><span class="line"></span><br><span class="line">	cudaMalloc((void**)&amp;device_result,11*sizeof(char));</span><br><span class="line">	cudaMemcpyToSymbol(p_HelloCUDA, helloCUDA,11*sizeof(char));</span><br><span class="line"></span><br><span class="line">	HelloCUDA&lt;&lt;&lt;1,1,0&gt;&gt;&gt;(device_result);</span><br><span class="line">	cudaMemcpy(&amp;host_result,device_result,11*sizeof(char),cudaMemcpyDeviceToHost);</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"%s\n"</span>,host_result);</span><br><span class="line">	cudaFree(device_result);</span><br><span class="line">	<span class="built_in">return</span> 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <h2 id="纹理内存"><a href="#纹理内存" class="headerlink" title="纹理内存"></a>纹理内存</h2><p>一种只读存储器，专门为那些在内存访问模式中存在大量空间局部性的图形应用程序设计。在计算应用中，适合于邻近线程读取的内存位置非常接近的情况。（不需要内存对齐）</p>
-<p><img src="picture/1.jpg" alt=""><br></p>
+<p><img src="/images/1.png" alt=""></p>
 <p>声明: texture&lt;type,Dim,ReadMode&gt;texRef; (Dim默认为1,ReadMode默认为cudaReadModeElementType)</p>
 <p>使用：<br>  1）将变量绑定到内存缓冲区（数据上传至设备缓存，核函数中可以直接访问）<br>     cudaBinkTexture(offset, texRef, devPre, desc, UINT_MAX);<br>     (后两个参数可省略)</p>
 <p>  2）读取纹理内存中的数据方法<br>     text1Dfetch（）<br>     访问texRef数组的二个元素：tex1Dfetch（texRef, 1);</p>
@@ -405,6 +415,9 @@
 
           
 
+  
+    <div class="comments" id="comments">
+    </div>
   
 
 
@@ -693,6 +706,28 @@
 
 
 
+
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+  
+  <script type="text/javascript">
+    var GUEST = ['nick','mail','link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item=>{
+      return GUEST.indexOf(item)>-1;
+    });
+    new Valine({
+        el: '#comments' ,
+        verify: false,
+        notify: false,
+        appId: '7aGO4ceaSyFmqARGKgkEqkRE-gzGzoHsz',
+        appKey: 'SMEf1qP35BUjnUV2X7Vdg8o2',
+        placeholder: 'Just go go',
+        avatar:'/images/avatar.jpg',
+        guest_info:guest,
+        pageSize:'10' || 10,
+    });
+  </script>
 
 
 
