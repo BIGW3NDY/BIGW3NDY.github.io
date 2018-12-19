@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+  <meta name="google-site-verification" content="true" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="opengl," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="一直都想写小游戏…之前一时兴起做了一个吃豆人的demo… 程序设计设置四个类map，block，pacman（吃豆人），beast（怪兽）。其中pacman和beast继承了block。它们的详细描述如下： Map类Map类用于管理地图（游戏背景）的载入以及绘制，mapFile为存放地图的文件名。1代表这里有障碍物，0代表可以走通，文件中只需存放地图的右上角1/4即可，因为整个地图是上下左右堆成的">
+<meta name="keywords" content="opengl">
+<meta property="og:type" content="article">
+<meta property="og:title" content="吃豆人游戏opengl实现">
+<meta property="og:url" content="http://yoursite.com/2018/12/18/吃豆人opengl实现/index.html">
+<meta property="og:site_name" content="魔力弹">
+<meta property="og:description" content="一直都想写小游戏…之前一时兴起做了一个吃豆人的demo… 程序设计设置四个类map，block，pacman（吃豆人），beast（怪兽）。其中pacman和beast继承了block。它们的详细描述如下： Map类Map类用于管理地图（游戏背景）的载入以及绘制，mapFile为存放地图的文件名。1代表这里有障碍物，0代表可以走通，文件中只需存放地图的右上角1/4即可，因为整个地图是上下左右堆成的">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/images/吃豆人游戏opengl实现1.jpg">
+<meta property="og:image" content="http://yoursite.com/images/吃豆人游戏opengl实现2.png">
+<meta property="og:image" content="http://yoursite.com/images/吃豆人游戏opengl实现3.png">
+<meta property="og:image" content="http://yoursite.com/images/吃豆人游戏opengl实现4.png">
+<meta property="og:image" content="http://yoursite.com/images/吃豆人游戏opengl实现5.png">
+<meta property="og:updated_time" content="2018-12-19T07:01:06.460Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="吃豆人游戏opengl实现">
+<meta name="twitter:description" content="一直都想写小游戏…之前一时兴起做了一个吃豆人的demo… 程序设计设置四个类map，block，pacman（吃豆人），beast（怪兽）。其中pacman和beast继承了block。它们的详细描述如下： Map类Map类用于管理地图（游戏背景）的载入以及绘制，mapFile为存放地图的文件名。1代表这里有障碍物，0代表可以走通，文件中只需存放地图的右上角1/4即可，因为整个地图是上下左右堆成的">
+<meta name="twitter:image" content="http://yoursite.com/images/吃豆人游戏opengl实现1.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/12/18/吃豆人opengl实现/"/>
+
+
+
+
+
+  <title>吃豆人游戏opengl实现 | 魔力弹</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">魔力弹</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">d=====(￣▽￣*)b</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/12/18/吃豆人opengl实现/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="DingHH">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="魔力弹">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">吃豆人游戏opengl实现</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-12-18T21:57:18+08:00">
+                2018-12-18
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2018/12/18/吃豆人opengl实现/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count valine-comment-count" data-xid="/2018/12/18/吃豆人opengl实现/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>一直都想写小游戏…之前一时兴起做了一个吃豆人的demo…</p>
+<h1 id="程序设计"><a href="#程序设计" class="headerlink" title="程序设计"></a>程序设计</h1><p>设置四个类map，block，pacman（吃豆人），beast（怪兽）。其中pacman和beast继承了block。<br>它们的详细描述如下：<br><img src="/images/吃豆人游戏opengl实现1.jpg" alt=""></p>
+<h3 id="Map类"><a href="#Map类" class="headerlink" title="Map类"></a>Map类</h3><p>Map类用于管理地图（游戏背景）的载入以及绘制，mapFile为存放地图的文件名。<br><img src="/images/吃豆人游戏opengl实现2.png" alt=""><br>1代表这里有障碍物，0代表可以走通，文件中只需存放地图的右上角1/4即可，因为整个地图是上下左右堆成的。<br>Size是地图的边长（以单元格即角色pacman/beast活动的最小单位为单位）<br>startX以及startY为地图起始位置（觉得在这里这样设置并不好…）<br>mapArr[][]则为从文件读入的整张地图数组。</p>
+<h3 id="Pacman-Beast类"><a href="#Pacman-Beast类" class="headerlink" title="Pacman/Beast类"></a>Pacman/Beast类</h3><p>首先设置了一个block类，其成员变量x，y为其在界面中的坐标。Pacman和Beast继承自block，在此基础上添加了xi，yi变量，xi，yi为角色在地图矩阵中的坐标。这样做是为了方便之后在编程的时候不用每次都计算角色在界面中的绝对位置坐标，而只需要在构造函数中传入其在地图矩阵中的坐标，构造函数负责运算界面中的绝对坐标。<br>另外draw（）用于绘制角色；move（）用于控制角色每一步的动作，pacman根据当前方向往前行走，并且保持开口大小的变化，beast我使用的随机函数控制其方向（使用寻路算法更佳）。</p>
+<h1 id="交互设计"><a href="#交互设计" class="headerlink" title="交互设计"></a>交互设计</h1><p>在这个demo里的主要界面：<br><img src="/images/吃豆人游戏opengl实现3.png" alt=""><br>通过glutDisplayFunc绑定绘制界面的函数，一开始显示开始界面，一旦玩家选择开始后，则进入游戏界面，玩家选择暂停或者被怪兽吃掉后，则又回到开始界面。这里调用的主要是各个类的draw（）方法。<br>通过glutIdleFunc：实现角色动画，如吃豆人张开嘴的角度。主要调用各个角色的move（）方法。<br>用过glutSpecialFunc和glutKeyboard实现键盘交互，空格键开始/暂停游戏，方向键控制pacman的前进方向。<br>由于在实验过程中发现有些角色存在更新界面时闪烁的情况，改用了双缓存加快了其绘制。</p>
+<h1 id="角色绘制"><a href="#角色绘制" class="headerlink" title="角色绘制"></a>角色绘制</h1><p>游戏中的两个角色：吃豆人（Pacman）以及怪兽（Beast），在游戏中为了使形象更加“生动”，要让这些角色动起来，下面先说一下如何用opengl将其动态得绘制出来。</p>
+<h3 id="吃豆人"><a href="#吃豆人" class="headerlink" title="吃豆人"></a>吃豆人</h3><p>首先绘制一个缺口为120°的黄色扇形：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">for (int i = -210; i &lt; 30; i++) &#123;</span><br><span class="line">    xx = x + cos(i*PI / 180.0)*(BlockSize / 2.0 - 1.0);</span><br><span class="line">    yy = y + sin(i*PI / 180.0)*(BlockSize / 2.0 - 1.0);</span><br><span class="line">    glVertex2d(xx, yy);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>考虑到吃豆人的运动方向，应该有四个状态，每个状态的缺口方向不同，以及吃豆人的缺口应该是不断变化的，通过angle以及pacStat改变吃豆人的绘制。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">for (int i = -210-angel+90*pacStat; i &lt; 30+angel+90*pacStat; i++) &#123;</span><br><span class="line">    xx = x + cos(i*PI / 180.0)*(BlockSize / 2.0 - 1.0);</span><br><span class="line">    yy = y + sin(i*PI / 180.0)*(BlockSize / 2.0 - 1.0);</span><br><span class="line">    glVertex2d(xx, yy);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>看看效果叭：<br><img src="/images/吃豆人游戏opengl实现4.png" alt=""></p>
+<h3 id="怪兽"><a href="#怪兽" class="headerlink" title="怪兽"></a>怪兽</h3><p>构成：头部（半圆）+ 身体（矩形）+ 左右眼（圆形）<br>绘制扇形方法与Pacman相同，绘制矩形方法与地图绘制相同，故不累述。<br><img src="/images/吃豆人游戏opengl实现5.png" alt=""></p>
+<h1 id="结束"><a href="#结束" class="headerlink" title="结束"></a>结束</h1><p>基本上就是上面这些内容了，做了一个肥肠肥肠潦草的小游戏demo叭，主要还是为了学习opengl……<br>目前四个怪兽的行动是使用随机数生成的，以后还要将寻路算法运用进来。<br>源代码（弱）放在：<a href="https://github.com/BIGW3NDY/PacmanGame" target="_blank" rel="noopener">https://github.com/BIGW3NDY/PacmanGame</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/opengl/" rel="tag"># opengl</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/12/06/android下科学计算机的实现/" rel="next" title="android下科学计算器的实现（ScriptEngine计算表达式）">
+                <i class="fa fa-chevron-left"></i> android下科学计算器的实现（ScriptEngine计算表达式）
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">DingHH</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">7</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">8</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#程序设计"><span class="nav-number">1.</span> <span class="nav-text">程序设计</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Map类"><span class="nav-number">1.0.1.</span> <span class="nav-text">Map类</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Pacman-Beast类"><span class="nav-number">1.0.2.</span> <span class="nav-text">Pacman/Beast类</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#交互设计"><span class="nav-number">2.</span> <span class="nav-text">交互设计</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#角色绘制"><span class="nav-number">3.</span> <span class="nav-text">角色绘制</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#吃豆人"><span class="nav-number">3.0.1.</span> <span class="nav-text">吃豆人</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#怪兽"><span class="nav-number">3.0.2.</span> <span class="nav-text">怪兽</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#结束"><span class="nav-number">4.</span> <span class="nav-text">结束</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">DingHH</span>
+
+  
+</div>
+
+
+  <div class="powered-by">
+<i class="fa fa-user-md"></i><span id="busuanzi_container_site_uv">
+  本站访客数:<span id="busuanzi_value_site_uv"></span>
+</span>
+</div>
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+  
+  <script type="text/javascript">
+    var GUEST = ['nick','mail','link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item=>{
+      return GUEST.indexOf(item)>-1;
+    });
+    new Valine({
+        el: '#comments' ,
+        verify: false,
+        notify: false,
+        appId: '7aGO4ceaSyFmqARGKgkEqkRE-gzGzoHsz',
+        appKey: 'SMEf1qP35BUjnUV2X7Vdg8o2',
+        placeholder: 'Just go go',
+        avatar:'/images/avatar.jpg',
+        guest_info:guest,
+        pageSize:'10' || 10,
+    });
+  </script>
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+<script src="/live2dw/lib/L2Dwidget.min.js?0c58a1486de42ac6cc1c59c7d98ae887"></script><script>L2Dwidget.init({"pluginModelPath":"assets/","model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","bottom":-30,"width":100,"height":200},"mobile":{"show":true},"log":false,"pluginJsPath":"lib/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>
+<script type="text/javascript" src="/js/src/love.js"></script>

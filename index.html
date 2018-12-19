@@ -241,6 +241,146 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/12/18/吃豆人opengl实现/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="DingHH">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="魔力弹">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/12/18/吃豆人opengl实现/" itemprop="url">吃豆人游戏opengl实现</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-12-18T21:57:18+08:00">
+                2018-12-18
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2018/12/18/吃豆人opengl实现/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count valine-comment-count" data-xid="/2018/12/18/吃豆人opengl实现/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>一直都想写小游戏…之前一时兴起做了一个吃豆人的demo…</p>
+<h1 id="程序设计"><a href="#程序设计" class="headerlink" title="程序设计"></a>程序设计</h1><p>设置四个类map，block，pacman（吃豆人），beast（怪兽）。其中pacman和beast继承了block。<br>它们的详细描述如下：<br><img src="/images/吃豆人游戏opengl实现1.jpg" alt=""></p>
+<h3 id="Map类"><a href="#Map类" class="headerlink" title="Map类"></a>Map类</h3><p>Map类用于管理地图（游戏背景）的载入以及绘制，mapFile为存放地图的文件名。<br><img src="/images/吃豆人游戏opengl实现2.png" alt=""><br>1代表这里有障碍物，0代表可以走通，文件中只需存放地图的右上角1/4即可，因为整个地图是上下左右堆成的。<br>Size是地图的边长（以单元格即角色pacman/beast活动的最小单位为单位）<br>startX以及startY为地图起始位置（觉得在这里这样设置并不好…）<br>mapArr[][]则为从文件读入的整张地图数组。</p>
+<h3 id="Pacman-Beast类"><a href="#Pacman-Beast类" class="headerlink" title="Pacman/Beast类"></a>Pacman/Beast类</h3><p>首先设置了一个block类，其成员变量x，y为其在界面中的坐标。Pacman和Beast继承自block，在此基础上添加了xi，yi变量，xi，yi为角色在地图矩阵中的坐标。这样做是为了方便之后在编程的时候不用每次都计算角色在界面中的绝对位置坐标，而只需要在构造函数中传入其在地图矩阵中的坐标，构造函数负责运算界面中的绝对坐标。<br>另外draw（）用于绘制角色；move（）用于控制角色每一步的动作，pacman根据当前方向往前行走，并且保持开口大小的变化，beast我使用的随机函数控制其方向（使用寻路算法更佳）。</p>
+<h1 id="交互设计"><a href="#交互设计" class="headerlink" title="交互设计"></a>交互设计</h1><p>在这个demo里的主要界面：<br><img src="/images/吃豆人游戏opengl实现3.png" alt=""><br>通过glutDisplayFunc绑定绘制界面的函数，一开始显示开始界面，一旦玩家选择开始后，则进入游戏界面，玩家选择暂停或者被怪兽吃掉后，则又回到开始界面。这里调用的主要是各个类的draw（）方法。<br>通过glutIdleFunc：实现角色动画，如吃豆人张开嘴的角度。主要调用各个角色的move（）方法。<br>用过glutSpecialFunc和glutKeyboard实现键盘交互，空格键开始/暂停游戏，方向键控制pacman的前进方向。<br>由于在实验过程中发现有些角色存在更新界面时闪烁的情况，改用了双缓存加快了其绘制。</p>
+<h1 id="角色绘制"><a href="#角色绘制" class="headerlink" title="角色绘制"></a>角色绘制</h1><p>游戏中的两个角色：吃豆人（Pacman）以及怪兽（Beast），在游戏中为了使形象更加“生动”，要让这些角色动起来，下面先说一下如何用opengl将其动态得绘制出来。</p>
+<h3 id="吃豆人"><a href="#吃豆人" class="headerlink" title="吃豆人"></a>吃豆人</h3><p>首先绘制一个缺口为120°的黄色扇形：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">for (int i = -210; i &lt; 30; i++) &#123;</span><br><span class="line">    xx = x + cos(i*PI / 180.0)*(BlockSize / 2.0 - 1.0);</span><br><span class="line">    yy = y + sin(i*PI / 180.0)*(BlockSize / 2.0 - 1.0);</span><br><span class="line">    glVertex2d(xx, yy);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>考虑到吃豆人的运动方向，应该有四个状态，每个状态的缺口方向不同，以及吃豆人的缺口应该是不断变化的，通过angle以及pacStat改变吃豆人的绘制。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">for (int i = -210-angel+90*pacStat; i &lt; 30+angel+90*pacStat; i++) &#123;</span><br><span class="line">    xx = x + cos(i*PI / 180.0)*(BlockSize / 2.0 - 1.0);</span><br><span class="line">    yy = y + sin(i*PI / 180.0)*(BlockSize / 2.0 - 1.0);</span><br><span class="line">    glVertex2d(xx, yy);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>看看效果叭：<br><img src="/images/吃豆人游戏opengl实现4.png" alt=""></p>
+<h3 id="怪兽"><a href="#怪兽" class="headerlink" title="怪兽"></a>怪兽</h3><p>构成：头部（半圆）+ 身体（矩形）+ 左右眼（圆形）<br>绘制扇形方法与Pacman相同，绘制矩形方法与地图绘制相同，故不累述。<br><img src="/images/吃豆人游戏opengl实现5.png" alt=""></p>
+<h1 id="结束"><a href="#结束" class="headerlink" title="结束"></a>结束</h1><p>基本上就是上面这些内容了，做了一个肥肠肥肠潦草的小游戏demo叭，主要还是为了学习opengl……<br>目前四个怪兽的行动是使用随机数生成的，以后还要将寻路算法运用进来。<br>源代码（弱）放在：<a href="https://github.com/BIGW3NDY/PacmanGame" target="_blank" rel="noopener">https://github.com/BIGW3NDY/PacmanGame</a></p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/12/06/android下科学计算机的实现/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1133,7 +1273,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-count">7</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -1146,7 +1286,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">7</span>
+                  <span class="site-state-item-count">8</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
